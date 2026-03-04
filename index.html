@@ -11319,36 +11319,22 @@ function updateChronoOverlay() {
   }
 }
 
-// Patch toggleChrono pour syncer le bouton chrono et l'overlay
-const _origToggleChrono = typeof toggleChrono === 'function' ? toggleChrono : null;
-
-function _syncChronoBtn() {
-  const btn = document.getElementById('chrono-btn');
-  if (btn) btn.classList.toggle('running', !!S.running);
-  updateChronoOverlay();
-}
-
-// Override léger du display chrono — patch le setInterval existant
-(function() {
-  const origInterval = setInterval;
-  // On laisse le chrono existant gérer l'affichage, on ajoute juste le sync btn
-  const syncTimer = setInterval(() => {
-    const chronoEl = document.getElementById('chrono');
-    const bigEl = document.getElementById('chrono-big');
-    const btn = document.getElementById('chrono-btn');
-    if (chronoEl && bigEl) bigEl.textContent = chronoEl.textContent;
-    if (chronoEl && bigEl) bigEl.className = chronoEl.className;
-    if (btn) btn.classList.toggle('running', chronoEl ? chronoEl.classList.contains('running') : false);
-    // Sync overlay btns
-    const startBtn = document.getElementById('chrono-overlay-start');
-    const stopBtn = document.getElementById('chrono-overlay-stop');
-    if (startBtn && stopBtn) {
-      const running = chronoEl && chronoEl.classList.contains('running');
-      startBtn.style.display = running ? 'none' : 'block';
-      stopBtn.style.display = running ? 'block' : 'none';
-    }
-  }, 500);
-})();
+// Sync chrono btn + overlay toutes les 500ms
+setInterval(() => {
+  const chronoEl = document.getElementById('chrono');
+  const bigEl    = document.getElementById('chrono-big');
+  const btn      = document.getElementById('chrono-btn');
+  if (!chronoEl) return;
+  const running = chronoEl.classList.contains('running');
+  if (bigEl) { bigEl.textContent = chronoEl.textContent; bigEl.className = running ? 'running' : ''; }
+  if (btn)   btn.classList.toggle('running', running);
+  const startBtn = document.getElementById('chrono-overlay-start');
+  const stopBtn  = document.getElementById('chrono-overlay-stop');
+  if (startBtn && stopBtn) {
+    startBtn.style.display = running ? 'none' : 'block';
+    stopBtn.style.display  = running ? 'block' : 'none';
+  }
+}, 500);
 
 
 // ══════════════════════════════════════════════════════════════
@@ -11425,16 +11411,13 @@ function _fbPushMonitorState() {
   }
 }
 
-// Patcher updateVitalsUI pour aussi pusher vers Firebase
-const _origUpdateVitalsUI = updateVitalsUI;
-function updateVitalsUI() {
-  _origUpdateVitalsUI();
-  // Push vitaux mis à jour vers le moniteur si session active
-  if (_fbDb && _fbSessionCode) {
-    clearTimeout(window._monitorPushTimer);
-    window._monitorPushTimer = setTimeout(_fbPushMonitorState, 300);
+// Push vitaux vers Firebase après chaque updateVitalsUI
+// (patch safe via setInterval — évite la récursion)
+setInterval(() => {
+  if (_fbDb && _fbSessionCode && S.running) {
+    _fbPushMonitorState();
   }
-}
+}, 3000);
 
 // QR Code generator — algorithme simple sans lib externe
 function _generateMonitorQR(code) {
