@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MedAware — Moniteur Patient</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&family=Barlow+Condensed:wght@400;600;700&display=swap');
+
+:root {
+  --bg:        #060809;
+  --bg-card:   #0d1117;
+  --border:    #1a2230;
+  --od-green:  #4a7c59;
+  --od-lit:    #5e9e70;
+  --amber:     #c8860a;
+  --amber-lit: #f0a820;
+  --red:       #cc2020;
+  --red-lit:   #ff4040;
+  --blue:      #2a5fa0;
+  --blue-lit:  #5090d0;
+  --text:      #c8d4e0;
+  --muted:     #3a4a5a;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-head: 'Rajdhani', sans-serif;
+  --font-ui:   'Barlow Condensed', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ══ HEADER ══ */
+#monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  height: 44px;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--od-lit);
+}
+.header-brand svg { flex-shrink: 0; }
+.header-session {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+#connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background .3s;
+}
+#connection-dot.live { background: var(--od-lit); animation: pulse-live 2s infinite; }
+#connection-dot.error { background: var(--red-lit); }
+@keyframes pulse-live {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ══ SCENARIO BAR ══ */
+#scenario-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 16px;
+  background: #0a0f0a;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  font-weight: 600;
+  text-transform: uppercase;
+  min-height: 28px;
+}
+#scenario-bar span { color: var(--text); }
+
+/* ══ VITALS GRID ══ */
+#vitals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 6px;
+  padding: 10px;
+  height: calc(100vh - 44px - 28px);
+}
+
+/* FC — grande carte plein largeur */
+.vital-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .4s, box-shadow .4s;
+}
+
+/* FC — prend toute la première ligne */
+#card-fc {
+  grid-column: 1 / -1;
+}
+
+.vital-card.warn {
+  border-color: var(--amber);
+  box-shadow: 0 0 20px rgba(200, 134, 10, 0.15);
+}
+.vital-card.crit {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(204, 32, 32, 0.25);
+  animation: crit-pulse 1.5s infinite;
+}
+@keyframes crit-pulse {
+  0%,100% { box-shadow: 0 0 20px rgba(204,32,32,.25); }
+  50% { box-shadow: 0 0 35px rgba(255,64,64,.45); }
+}
+
+/* Locked state */
+.vital-card.locked {
+  border-color: var(--border);
+  box-shadow: none;
+  animation: none;
+}
+.vital-card.locked .vital-value { color: var(--muted); }
+.vital-card.locked .lock-icon { display: flex; }
+
+/* ECG line background for FC */
+#card-fc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, transparent 8%,
+    rgba(94,158,112,0.06) 8%, rgba(94,158,112,0.06) 10%,
+    transparent 10%, transparent 100%
+  );
+  pointer-events: none;
+}
+
+.vital-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.vital-card.warn .vital-label { color: var(--amber); }
+.vital-card.crit .vital-label { color: var(--red-lit); }
+
+.vital-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  transition: color .4s;
+}
+#card-fc .vital-value { font-size: clamp(64px, 12vw, 100px); }
+.vital-card:not(#card-fc) .vital-value { font-size: clamp(36px, 7vw, 60px); }
+
+.vital-unit {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.vital-card.warn .vital-unit { color: var(--amber-lit); opacity: .6; }
+.vital-card.crit .vital-unit { color: var(--red-lit); opacity: .6; }
+
+/* Source label (quel équipement) */
+.vital-source {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/* Lock icon */
+.lock-icon {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.lock-icon svg { opacity: 0.25; }
+.lock-icon span {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* ECG line for FC card */
+#ecg-line {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  opacity: 0.3;
+}
+#ecg-path { stroke: var(--od-lit); stroke-width: 1.5; fill: none; }
+
+/* ══ WAITING SCREEN ══ */
+#waiting-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 100;
+}
+#waiting-screen.show { display: flex; }
+.waiting-logo {
+  font-family: var(--font-head);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--od-lit);
+}
+.waiting-sub {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.waiting-code-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.waiting-code-input label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.connect-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#input-session-code {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  color: var(--od-lit);
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  padding: 10px 20px;
+  text-align: center;
+  text-transform: uppercase;
+  outline: none;
+  width: 200px;
+  transition: border-color .2s;
+}
+#input-session-code:focus { border-color: var(--od-green); }
+#btn-scan-qr {
+  background: var(--bg-card);
+  border: 2px solid var(--od-green);
+  border-radius: 8px;
+  color: var(--od-lit);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  height: 52px;
+  width: 52px;
+}
+#btn-scan-qr:active { background: #0d1f14; }
+#btn-demo {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+}
+#btn-demo:active { border-color: var(--od-green); color: var(--od-lit); }
+#btn-connect {
+  background: var(--od-green);
+  border: 1px solid var(--od-lit);
+  border-radius: 6px;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: background .15s;
+}
+#btn-connect:active { background: var(--od-lit); }
+.waiting-err {
+  font-size: 12px;
+  color: var(--red-lit);
+  min-height: 18px;
+}
+
+/* ══ DISCONNECTED BANNER ══ */
+#disconnected-banner {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background: #1a0a00;
+  border-top: 2px solid var(--amber);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--amber-lit);
+  letter-spacing: 1px;
+  z-index: 50;
+}
+#disconnected-banner.show { display: block; }
+
+/* Landscape phone — 2 colonnes ajustées */
+@media (max-height: 450px) {
+  #vitals-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+  }
+  #card-fc { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ WAITING SCREEN ══ -->
+<div id="waiting-screen" class="show">
+  <div class="waiting-logo">MedAware</div>
+  <div class="waiting-sub">Moniteur Patient</div>
+  <div class="waiting-code-input">
+    <label>Code session OCT</label>
+    <div class="connect-row">
+      <input id="input-session-code" type="text" maxlength="8" placeholder="XXXXXX"
+        oninput="this.value=this.value.toUpperCase()"
+        onkeydown="if(event.key==='Enter')connectToSession()"/>
+      <button id="btn-scan-qr" onclick="toggleQRScanner()" title="Scanner le QR code">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <!-- Viseur appareil photo -->
+          <rect x="2" y="6" width="24" height="18" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Objectif -->
+          <circle cx="14" cy="15" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
+          <circle cx="14" cy="15" r="2" fill="currentColor" opacity=".5"/>
+          <!-- Flash -->
+          <rect x="10" y="3" width="8" height="4" rx="1.5" fill="currentColor" opacity=".7"/>
+          <!-- Coins viseur intérieur -->
+          <path d="M10 12 L10 10 L12 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M18 12 L18 10 L16 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M10 18 L10 20 L12 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M18 18 L18 20 L16 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <button id="btn-connect" onclick="connectToSession()">Se connecter</button>
+    <div class="waiting-err" id="connect-err"></div>
+    <div style="width:200px;border-top:1px solid var(--border);margin-top:6px;"></div>
+    <button id="btn-demo" onclick="lancerDemo()">👁 Aperçu moniteur (démo)</button>
+  </div>
+
+  <!-- QR Scanner overlay -->
+  <div id="qr-scanner-zone" style="display:none; flex-direction:column; align-items:center; gap:12px;">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;">Pointer vers le QR code</div>
+    <div style="position:relative; width:240px; height:240px; border-radius:12px; overflow:hidden; border:2px solid var(--od-green);">
+      <video id="qr-video" style="width:100%;height:100%;object-fit:cover;" autoplay playsinline muted></video>
+      <!-- Coins de visée -->
+      <div style="position:absolute;inset:0;pointer-events:none;">
+        <svg viewBox="0 0 240 240" style="width:100%;height:100%;">
+          <path d="M20 50 L20 20 L50 20" stroke="#5e9e70" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M190 20 L220 20 L220 50" stroke="#5e9e70" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M20 190 L20 220 L50 220" stroke="#5e9e70" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M220 190 L220 220 L190 220" stroke="#5e9e70" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <button onclick="toggleQRScanner()" style="background:none;border:1px solid var(--muted);border-radius:6px;color:var(--muted);font-family:var(--font-ui);font-size:13px;padding:6px 16px;cursor:pointer;">Annuler</button>
+    <canvas id="qr-canvas" style="display:none;"></canvas>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<div id="monitor-header">
+  <div class="header-brand">
+    <!-- Caducée SVG simplifié -->
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <line x1="10" y1="2" x2="10" y2="18" stroke="#5e9e70" stroke-width="2"/>
+      <path d="M6 5 Q10 2 14 5 Q10 8 6 5Z" fill="#5e9e70" opacity=".7"/>
+      <path d="M6 10 Q10 7 14 10 Q10 13 6 10Z" fill="#5e9e70" opacity=".7"/>
+      <circle cx="10" cy="2" r="2" fill="#f0a820"/>
+    </svg>
+    MONITEUR
+  </div>
+  <div class="header-session" id="header-session-code">—</div>
+  <div id="connection-dot"></div>
+</div>
+
+<!-- ══ SCENARIO BAR ══ -->
+<div id="scenario-bar">
+  <span id="scenario-name">En attente de connexion…</span>
+</div>
+
+<!-- ══ VITALS GRID ══ -->
+<div id="vitals-grid">
+
+  <!-- FC — grande -->
+  <div class="vital-card locked" id="card-fc">
+    <div class="vital-label">FC</div>
+    <div class="vital-value" id="disp-fc">—</div>
+    <div class="vital-unit">bpm</div>
+    <div class="vital-source" id="src-fc"></div>
+    <div class="lock-icon" id="lock-fc">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3a4a5a" stroke-width="2"/>
+        <path d="M8 11V7a4 4 0 118 0v4" stroke="#3a4a5a" stroke-width="2"/>
+      </svg>
+      <span>Saturomètre ou<br>Moniteur ECG</span>
+    </div>
+    <!-- ECG decorative line -->
+    <svg id="ecg-line" viewBox="0 0 400 24" preserveAspectRatio="none">
+      <path id="ecg-path" d="M0,12 L60,12 L70,12 L75,2 L80,22 L85,2 L90,12 L100,12 L160,12 L170,12 L175,2 L180,22 L185,2 L190,12 L200,12 L260,12 L270,12 L275,2 L280,22 L285,2 L290,12 L300,12 L360,12 L370,12 L375,2 L380,22 L385,2 L390,12 L400,12"/>
+    </svg>
+  </div>
+
+  <!-- SpO2 -->
+  <div class="vital-card locked" id="card-spo2">
+    <div class="vital-label">SpO₂</div>
+    <div class="vital-value" id="disp-spo2">—</div>
+    <div class="vital-unit">%</div>
+    <div class="vital-source" id="src-spo2">Sat.</div>
+    <div class="lock-icon" id="lock-spo2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3a4a5a" stroke-width="2"/>
+        <path d="M8 11V7a4 4 0 118 0v4" stroke="#3a4a5a" stroke-width="2"/>
+      </svg>
+      <span>Saturomètre</span>
+    </div>
+  </div>
+
+  <!-- TA -->
+  <div class="vital-card locked" id="card-ta">
+    <div class="vital-label">TA</div>
+    <div class="vital-value" id="disp-ta" style="font-size:clamp(28px,5.5vw,48px);">—</div>
+    <div class="vital-unit">mmHg</div>
+    <div class="vital-source" id="src-ta">Brassard</div>
+    <div class="lock-icon" id="lock-ta">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3a4a5a" stroke-width="2"/>
+        <path d="M8 11V7a4 4 0 118 0v4" stroke="#3a4a5a" stroke-width="2"/>
+      </svg>
+      <span>Brassard TA</span>
+    </div>
+  </div>
+
+  <!-- FR -->
+  <div class="vital-card locked" id="card-fr">
+    <div class="vital-label">FR</div>
+    <div class="vital-value" id="disp-fr">—</div>
+    <div class="vital-unit">/min</div>
+    <div class="vital-source" id="src-fr">Capno.</div>
+    <div class="lock-icon" id="lock-fr">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3a4a5a" stroke-width="2"/>
+        <path d="M8 11V7a4 4 0 118 0v4" stroke="#3a4a5a" stroke-width="2"/>
+      </svg>
+      <span>Capnographe</span>
+    </div>
+  </div>
+
+  <!-- Temp -->
+  <div class="vital-card locked" id="card-temp">
+    <div class="vital-label">TEMP</div>
+    <div class="vital-value" id="disp-temp">—</div>
+    <div class="vital-unit">°C</div>
+    <div class="vital-source" id="src-temp">Thermo.</div>
+    <div class="lock-icon" id="lock-temp">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="#3a4a5a" stroke-width="2"/>
+        <path d="M8 11V7a4 4 0 118 0v4" stroke="#3a4a5a" stroke-width="2"/>
+      </svg>
+      <span>Thermomètre</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Disconnected banner -->
+<div id="disconnected-banner">⚠ Signal perdu — Reconnexion en cours…</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+'use strict';
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAMNTR0OD4PmX_LzqGXhroWQW-603aF5Uw",
+  authDomain: "medaware-a2680.firebaseapp.com",
+  databaseURL: "https://medaware-a2680-default-rtdb.firebaseio.com",
+  projectId: "medaware-a2680",
+  storageBucket: "medaware-a2680.firebasestorage.app",
+  messagingSenderId: "351117839918",
+  appId: "1:351117839918:web:05428316036cd7d447d9bf",
+  measurementId: "G-QLQDETB1ZM"
+};
+
+let fbApp = null;
+let fbDb  = null;
+let sessionCode = '';
+let monitorRef = null;
+let viewerRef  = null;
+
+function lancerDemo() {
+  document.getElementById('waiting-screen').classList.remove('show');
+  document.getElementById('header-session-code').textContent = 'DÉMO';
+  document.getElementById('connection-dot').className = 'live';
+  document.getElementById('scenario-name').textContent = 'Scénario démo — Traumatisme balistique';
+
+  // Données démo — tous les équipements connectés
+  const demoData = {
+    visible: { fc: true, spo2: true, ta: true, fr: true, temp: true },
+    equip:   { sat: true, ta: true, ecg: false, capno: true, temp: true },
+    vitals:  { fc: 118, ta: '88/60', fr: 24, spo2: 91, temp: '36.1' },
+    scenario: 'Scénario démo — Traumatisme balistique',
+  };
+  updateDisplay(demoData);
+
+  // Simulation évolution en temps réel
+  let tick = 0;
+  setInterval(() => {
+    tick++;
+    demoData.vitals.fc   = 118 + Math.round(Math.sin(tick * 0.3) * 8);
+    demoData.vitals.spo2 = 91  + Math.round(Math.sin(tick * 0.2) * 2);
+    demoData.vitals.fr   = 24  + Math.round(Math.sin(tick * 0.4) * 3);
+    updateDisplay(demoData);
+  }, 2000);
+}
+
+
+let qrStream = null;
+let qrScanInterval = null;
+
+function toggleQRScanner() {
+  const scanZone = document.getElementById('qr-scanner-zone');
+  const inputZone = document.getElementById('input-session-code').closest('div') || document.querySelector('.waiting-code-input');
+  const btnConnect = document.getElementById('btn-connect');
+  const btnScan = document.getElementById('btn-scan-qr');
+  const isOpen = scanZone.style.display !== 'none';
+
+  if (isOpen) {
+    stopQRScanner();
+    scanZone.style.display = 'none';
+    inputZone.style.display = 'flex';
+    btnConnect.style.display = 'block';
+    btnScan.classList.remove('scanning');
+  } else {
+    scanZone.style.display = 'flex';
+    inputZone.style.display = 'none';
+    btnConnect.style.display = 'none';
+    btnScan.classList.add('scanning');
+    startQRScanner();
+  }
+}
+
+async function startQRScanner() {
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  const errEl = document.getElementById('connect-err');
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    video.srcObject = qrStream;
+    await video.play();
+
+    // Utiliser BarcodeDetector si disponible (Chrome/Android)
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      qrScanInterval = setInterval(async () => {
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0) {
+            handleQRResult(codes[0].rawValue);
+          }
+        } catch(e) {}
+      }, 400);
+    } else {
+      // Fallback — canvas frame analysis (extraction URL param)
+      qrScanInterval = setInterval(() => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        // Sans lib QR, on affiche un message
+        errEl.textContent = 'Scan non supporté sur ce navigateur — entrez le code manuellement';
+        stopQRScanner();
+        toggleQRScanner();
+      }, 1000);
+    }
+  } catch(e) {
+    errEl.textContent = 'Caméra non accessible — entrez le code manuellement';
+    toggleQRScanner();
+  }
+}
+
+function stopQRScanner() {
+  if (qrScanInterval) { clearInterval(qrScanInterval); qrScanInterval = null; }
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+  const video = document.getElementById('qr-video');
+  if (video) video.srcObject = null;
+}
+
+function handleQRResult(rawValue) {
+  stopQRScanner();
+  // Extraire le code session de l'URL
+  try {
+    const url = new URL(rawValue);
+    const code = url.searchParams.get('session');
+    if (code) {
+      document.getElementById('input-session-code').value = code.toUpperCase();
+      toggleQRScanner();
+      connectToSession(code.toUpperCase());
+      return;
+    }
+  } catch(e) {}
+  // Sinon traiter comme code direct
+  const code = rawValue.trim().toUpperCase();
+  if (code.length >= 4) {
+    document.getElementById('input-session-code').value = code;
+    toggleQRScanner();
+    connectToSession(code);
+  }
+}
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('session');
+  if (code) {
+    document.getElementById('input-session-code').value = code.toUpperCase();
+    connectToSession(code.toUpperCase());
+  }
+});
+
+function connectToSession(codeArg) {
+  const code = (codeArg || document.getElementById('input-session-code').value).trim().toUpperCase();
+  const errEl = document.getElementById('connect-err');
+  if (!code || code.length < 4) {
+    errEl.textContent = 'Code invalide — minimum 4 caractères';
+    return;
+  }
+  errEl.textContent = '';
+  sessionCode = code;
+
+  try {
+    if (!fbApp) {
+      fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+      fbDb  = firebase.database();
+    }
+  } catch(e) {
+    // App déjà initialisée ou erreur
+    try { fbDb = firebase.database(); } catch(e2) {}
+  }
+
+  if (!fbDb) {
+    showOfflineMode(code);
+    return;
+  }
+
+  document.getElementById('header-session-code').textContent = code;
+  document.getElementById('waiting-screen').classList.remove('show');
+
+  // Enregistrer ce viewer
+  viewerRef = fbDb.ref(`sessions/${code}/monitor/viewers`);
+  viewerRef.transaction(count => (count || 0) + 1);
+  window.addEventListener('beforeunload', () => {
+    viewerRef.transaction(count => Math.max(0, (count || 1) - 1));
+  });
+
+  // Connexion status
+  fbDb.ref('.info/connected').on('value', snap => {
+    const dot = document.getElementById('connection-dot');
+    const banner = document.getElementById('disconnected-banner');
+    if (snap.val() === true) {
+      dot.className = 'live';
+      banner.classList.remove('show');
+    } else {
+      dot.className = 'error';
+      banner.classList.add('show');
+    }
+  });
+
+  // Écouter les données du moniteur
+  monitorRef = fbDb.ref(`sessions/${code}/monitor`);
+  monitorRef.on('value', snap => {
+    const data = snap.val();
+    if (data) updateDisplay(data);
+  });
+}
+
+function showOfflineMode(code) {
+  // Pas de Firebase — afficher en mode démo
+  document.getElementById('header-session-code').textContent = code + ' (démo)';
+  document.getElementById('waiting-screen').classList.remove('show');
+  document.getElementById('scenario-name').textContent = 'Mode hors ligne — Firebase requis';
+  document.getElementById('connection-dot').className = 'error';
+}
+
+function updateDisplay(data) {
+  const vis = data.visible || {};
+  const v   = data.vitals  || {};
+
+  // Scénario
+  document.getElementById('scenario-name').textContent = data.scenario || '—';
+
+  // FC — sat ou ECG
+  const fcVisible = vis.fc === true;
+  updateCard('fc', fcVisible, v.fc, 'bpm',
+    fcVisible ? (data.equip?.ecg ? 'ECG' : 'Sat.') : '',
+    v => v > 135 ? 'crit' : v > 110 ? 'warn' : '');
+
+  // SpO2
+  updateCard('spo2', vis.spo2 === true, v.spo2, '%', 'Sat.',
+    v => v < 90 ? 'crit' : v < 94 ? 'warn' : '');
+
+  // TA
+  updateCard('ta', vis.ta === true, v.ta, 'mmHg', 'Brassard',
+    val => {
+      const sbp = parseInt(String(val).split('/')[0]);
+      return sbp < 80 ? 'crit' : sbp < 100 ? 'warn' : '';
+    });
+
+  // FR
+  updateCard('fr', vis.fr === true, v.fr, '/min', 'Capno.',
+    v => v < 8 ? 'crit' : v > 30 ? 'crit' : v < 12 ? 'warn' : v > 24 ? 'warn' : '');
+
+  // Temp
+  updateCard('temp', vis.temp === true, v.temp, '°C', 'Thermo.',
+    v => parseFloat(v) < 35 ? 'crit' : parseFloat(v) < 36 ? 'warn' : '');
+
+  // Animer l'ECG si FC visible
+  animateECG(fcVisible, parseInt(v.fc) || 0);
+}
+
+function updateCard(id, visible, value, unit, source, getCriticality) {
+  const card  = document.getElementById('card-' + id);
+  const disp  = document.getElementById('disp-' + id);
+  const lock  = document.getElementById('lock-' + id);
+  const srcEl = document.getElementById('src-' + id);
+  if (!card) return;
+
+  if (!visible) {
+    card.className = 'vital-card locked';
+    disp.textContent = '—';
+    if (lock)  lock.style.display = 'flex';
+    if (srcEl) srcEl.textContent = '';
+    return;
+  }
+
+  if (lock)  lock.style.display = 'none';
+  if (srcEl) srcEl.textContent = source;
+
+  const displayVal = value !== undefined && value !== null ? String(value) : '—';
+  disp.textContent = displayVal;
+
+  const crit = getCriticality(value);
+  card.className = 'vital-card' + (crit ? ' ' + crit : '');
+}
+
+// Animation ECG subtile dans la carte FC
+let ecgAnimFrame = null;
+function animateECG(active, bpm) {
+  const ecgLine = document.getElementById('ecg-line');
+  if (!ecgLine) return;
+  ecgLine.style.opacity = active ? '0.3' : '0';
+  if (!active) return;
+  // Légère animation de scroll horizontal
+  let offset = 0;
+  const speed = Math.max(1, bpm / 60);
+  function step() {
+    offset = (offset + speed * 0.5) % 100;
+    ecgLine.style.transform = `translateX(-${offset}px)`;
+    ecgAnimFrame = requestAnimationFrame(step);
+  }
+  if (!ecgAnimFrame) step();
+}
+</script>
+</body>
+</html>
