@@ -2,326 +2,431 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MedAware — Coordonnateur</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap');
 :root {
-  --bg-deep:#0a0c0f;--bg-panel:#111519;--bg-card:#181d23;--bg-hover:#1f252e;
-  --border:#252d38;--border-lit:#2e3d50;--od-green:#4a7c59;--od-lit:#5e9e70;
-  --amber:#c8860a;--amber-lit:#f0a820;--red-crit:#b02020;--red-lit:#e03030;
-  --blue-info:#2a5fa0;--blue-lit:#3a7fd0;--text-primary:#d8dde5;
-  --text-secondary:#7a8898;--text-muted:#444d5a;
-  --font-ui:'Barlow Condensed',sans-serif;--font-mono:'Share Tech Mono',monospace;--font-head:'Rajdhani',sans-serif;
+  --bg:#060809;--bg-panel:#0d1117;--bg-card:#111519;--bg-hover:#181d23;
+  --border:#1a2230;--od-green:#4a7c59;--od-lit:#5e9e70;
+  --amber:#c8860a;--amber-lit:#f0a820;--red:#b02020;--red-lit:#e03030;
+  --blue:#2a5fa0;--blue-lit:#3a7fd0;
+  --t1-bg:#2a0808;--t1-b:#aa1010;--t1-t:#ff5050;
+  --t2-bg:#1e1400;--t2-b:#aa6600;--t2-t:#ffaa00;
+  --t3-bg:#081a0a;--t3-b:#2a6a30;--t3-t:#5e9e70;
+  --text:#c8d4e0;--text-sec:#4a5a6a;--text-muted:#2a3540;
+  --font-ui:'Barlow Condensed',sans-serif;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-head:'Rajdhani',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg-deep);color:var(--text-primary);font-family:var(--font-ui);font-size:15px;min-height:100vh;}
-#header{background:var(--bg-panel);border-bottom:2px solid var(--od-green);padding:12px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:sticky;top:0;z-index:100;}
-.brand{font-family:var(--font-head);font-size:24px;font-weight:700;letter-spacing:3px;color:var(--od-lit);}
-.brand span{font-size:10px;color:var(--text-muted);letter-spacing:2px;display:block;font-weight:400;}
-.coord-badge{background:#0d1a10;border:1px solid var(--od-green);color:var(--od-lit);font-size:11px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:1px;}
-#setup-panel{max-width:600px;margin:40px auto;padding:0 20px;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;}
+#header{background:var(--bg-panel);border-bottom:2px solid var(--od-green);padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:100;}
+.brand{font-family:var(--font-head);font-size:22px;font-weight:700;letter-spacing:3px;color:var(--od-lit);}
+.brand small{font-size:10px;color:var(--text-sec);letter-spacing:2px;font-weight:400;display:block;}
+.coord-badge{background:#0a1510;border:1px solid var(--od-green);color:var(--od-lit);font-size:10px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:1.5px;}
+#horloge{margin-left:auto;font-family:var(--font-mono);font-size:18px;color:var(--od-lit);}
+#fb-badge{font-size:11px;color:var(--text-sec);}
+#setup-panel{max-width:520px;margin:48px auto;padding:0 16px;}
 .setup-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:28px;}
-.setup-title{font-size:18px;font-weight:700;color:var(--od-lit);letter-spacing:1px;margin-bottom:20px;}
-.setup-label{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block;}
-.setup-input{width:100%;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-family:var(--font-ui);font-size:14px;padding:8px 12px;outline:none;margin-bottom:16px;transition:border-color .15s;}
+.setup-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--od-lit);letter-spacing:1px;margin-bottom:20px;}
+.setup-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-sec);text-transform:uppercase;margin-bottom:5px;display:block;}
+.setup-input{width:100%;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-ui);font-size:15px;padding:9px 12px;outline:none;margin-bottom:14px;transition:border-color .15s;}
 .setup-input:focus{border-color:var(--od-green);}
-.btn-primary{width:100%;background:var(--od-green);border:none;border-radius:4px;color:#000;font-family:var(--font-ui);font-size:14px;font-weight:700;padding:11px;cursor:pointer;letter-spacing:1px;transition:background .15s;}
-.btn-primary:hover{background:var(--od-lit);}
-.code-block{background:var(--bg-deep);border:2px solid var(--od-green);border-radius:8px;padding:18px;text-align:center;margin-bottom:20px;}
-.code-value{font-family:var(--font-mono);font-size:40px;font-weight:700;letter-spacing:10px;color:var(--od-lit);}
-.code-hint{font-size:11px;color:var(--text-muted);margin-top:6px;}
-.btn-copy{background:var(--bg-hover);border:1px solid var(--border);color:var(--text-secondary);font-family:var(--font-ui);font-size:12px;padding:5px 14px;border-radius:4px;cursor:pointer;margin-top:10px;}
-.btn-copy:hover{border-color:var(--od-green);color:var(--od-lit);}
-#dashboard{display:none;padding:16px 20px;max-width:1200px;margin:0 auto;}
-#session-bar{background:var(--bg-card);border:1px solid var(--od-green);border-radius:6px;padding:12px 18px;display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;}
-.sbar-label{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;}
-.sbar-value{font-size:16px;font-weight:700;color:var(--od-lit);font-family:var(--font-mono);letter-spacing:4px;}
-.sbar-sub{font-size:12px;color:var(--text-secondary);}
-#conn-count{font-size:22px;font-weight:700;color:var(--amber-lit);font-family:var(--font-mono);}
+.btn-primary{width:100%;background:var(--od-green);border:none;border-radius:4px;color:#fff;font-family:var(--font-ui);font-size:15px;font-weight:700;padding:11px;cursor:pointer;letter-spacing:1px;transition:background .15s;}
+.btn-primary:active{background:var(--od-lit);}
+.btn-secondary{width:100%;background:var(--bg-hover);border:1px solid var(--border);border-radius:4px;color:var(--text-sec);font-family:var(--font-ui);font-size:14px;font-weight:600;padding:10px;cursor:pointer;letter-spacing:.5px;transition:all .15s;margin-top:8px;}
+.btn-secondary:active{border-color:var(--od-green);color:var(--od-lit);}
+.code-block{background:var(--bg);border:2px solid var(--od-green);border-radius:8px;padding:18px;text-align:center;margin:18px 0;}
+.code-value{font-family:var(--font-mono);font-size:42px;font-weight:700;letter-spacing:10px;color:var(--od-lit);}
+.code-hint{font-size:11px;color:var(--text-sec);margin-top:6px;}
+hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
+#dashboard{display:none;padding:16px 20px;max-width:1280px;margin:0 auto;}
+#session-bar{background:var(--bg-card);border:1px solid var(--od-green);border-radius:6px;padding:12px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;}
+.sbar-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text-sec);text-transform:uppercase;}
+.sbar-val{font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--od-lit);letter-spacing:3px;}
+.sbar-val.sm{font-size:13px;letter-spacing:1px;font-family:var(--font-ui);color:var(--text);}
 .sbar-sep{width:1px;height:36px;background:var(--border);}
-#octs-table-wrap{overflow-x:auto;}
-#octs-table{width:100%;border-collapse:collapse;font-size:13px;}
-#octs-table th{background:var(--bg-panel);border-bottom:2px solid var(--border);color:var(--text-muted);font-size:10px;font-weight:700;letter-spacing:1.5px;padding:10px 12px;text-align:left;text-transform:uppercase;white-space:nowrap;}
-#octs-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.tr-oct:hover td{background:var(--bg-hover);}
-.etape-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:0.5px;white-space:nowrap;}
-.etape-badge.debut{background:#1a0000;color:var(--red-lit);border:1px solid var(--red-crit);}
-.etape-badge.load{background:#0d1520;color:var(--blue-lit);border:1px solid var(--blue-info);}
+#conn-count{font-size:28px;font-weight:700;color:var(--amber-lit);font-family:var(--font-mono);}
+.btn-effacer{margin-left:auto;background:transparent;border:1px solid var(--red);color:var(--red-lit);font-family:var(--font-ui);font-size:12px;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;}
+#octs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:16px;}
+.oct-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .3s;}
+.oct-card.recent{border-color:var(--od-green);}
+.oct-card.stale{opacity:.65;}
+.oct-card-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-panel);border-bottom:1px solid var(--border);}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--text-muted);flex-shrink:0;transition:background .3s;}
+.live-dot.live{background:var(--od-green);box-shadow:0 0 6px var(--od-green);animation:pdot 1.8s infinite;}
+@keyframes pdot{0%,100%{opacity:1;}50%{opacity:.3;}}
+.oct-nom{font-weight:700;font-size:15px;color:var(--text);flex:1;}
+.oct-qual{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-sec);text-transform:uppercase;}
+.oct-elapsed{font-family:var(--font-mono);font-size:12px;color:var(--amber-lit);white-space:nowrap;}
+.oct-card-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+.oct-scenario{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.oct-scenario.empty{color:var(--text-sec);font-style:italic;font-weight:400;}
+.prio-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:1px;}
+.prio-badge.T1{background:var(--t1-bg);border:1px solid var(--t1-b);color:var(--t1-t);}
+.prio-badge.T2{background:var(--t2-bg);border:1px solid var(--t2-b);color:var(--t2-t);}
+.prio-badge.T3{background:var(--t3-bg);border:1px solid var(--t3-b);color:var(--t3-t);}
+.prio-badge.uk{background:var(--bg-hover);border:1px solid var(--border);color:var(--text-sec);}
+.etape-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:.5px;}
+.etape-badge.debut{background:#1a0000;color:var(--red-lit);border:1px solid var(--red);}
+.etape-badge.load{background:#0d1520;color:var(--blue-lit);border:1px solid var(--blue);}
 .etape-badge.unload{background:#0d1f14;color:var(--od-lit);border:1px solid var(--od-green);}
-.etape-badge.fin{background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);}
+.etape-badge.fin{background:var(--bg-hover);color:var(--text-sec);border:1px solid var(--border);}
 .etape-badge.presence{background:#1a1200;color:var(--amber-lit);border:1px solid var(--amber);}
-.etape-badge.default{background:var(--bg-hover);color:var(--text-secondary);border:1px solid var(--border);}
-.oct-nom-cell{font-weight:700;color:var(--text-primary);}
-.oct-nom-cell .oct-qual{font-size:10px;font-weight:400;color:var(--text-muted);display:block;}
-.live-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
-.live-dot.active{background:var(--od-green);box-shadow:0 0 6px var(--od-green);animation:pulse 1.5s infinite;}
-.live-dot.idle{background:var(--text-muted);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-#historique-panel{margin-top:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
-.hist-header{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--amber-lit);text-transform:uppercase;display:flex;align-items:center;gap:10px;}
-#hist-list{max-height:280px;overflow-y:auto;}
-.hist-entry{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px;}
+.etape-badge.default{background:var(--bg-hover);color:var(--text-sec);border:1px solid var(--border);}
+.marche-bar{display:flex;gap:3px;margin-top:2px;}
+.ms{flex:1;height:5px;border-radius:2px;background:var(--border);transition:background .4s;position:relative;}
+.ms.done{background:var(--od-green);}
+.ms.active{background:var(--amber-lit);animation:mp 1.5s infinite;}
+@keyframes mp{0%,100%{opacity:1;}50%{opacity:.35;}}
+.ms-label{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:var(--text-muted);letter-spacing:.5px;}
+.ms.active .ms-label,.ms.done .ms-label{color:var(--text-sec);}
+.oct-heure{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-align:right;}
+#no-octs{grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text-sec);font-size:14px;}
+#no-octs strong{display:block;font-size:18px;color:var(--text);margin-bottom:8px;}
+#historique-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+.hist-header{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--amber-lit);text-transform:uppercase;}
+.btn-hclear{margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--text-sec);font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;font-family:var(--font-ui);}
+#hist-list{max-height:260px;overflow-y:auto;}
+.hist-entry{display:flex;align-items:center;gap:12px;padding:7px 16px;border-bottom:1px solid var(--border);font-size:12px;}
 .hist-entry:last-child{border-bottom:none;}
-.hist-time{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);white-space:nowrap;min-width:70px;}
-.hist-oct{font-weight:700;color:var(--amber-lit);min-width:120px;white-space:nowrap;}
-.hist-etape{flex:1;color:var(--text-secondary);}
-.hist-sc{font-size:11px;color:var(--text-muted);}
-#fb-status-bar{position:fixed;bottom:16px;right:16px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:0.5px;z-index:500;}
-#fb-status-bar.connected{border-color:var(--od-green);color:var(--od-lit);background:#0d1f14;}
-#fb-status-bar.offline{border-color:var(--border);color:var(--text-muted);}
+.hist-time{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-width:68px;}
+.hist-oct{font-weight:700;color:var(--amber-lit);min-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-etape{flex:1;color:var(--text-sec);}
+.hist-sc{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+#fb-status-bar{position:fixed;bottom:14px;right:14px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.5px;z-index:500;}
+#fb-status-bar.connected{border-color:var(--od-green);color:var(--od-lit);background:#0a1810;}
+#fb-status-bar.offline{color:var(--text-sec);}
 #fb-status-bar.error{border-color:var(--red-lit);color:var(--red-lit);background:#1a0000;}
-.btn-danger{background:var(--bg-hover);border:1px solid var(--red-crit);color:var(--red-lit);font-family:var(--font-ui);font-size:12px;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;margin-left:auto;}
-.btn-danger:hover{background:var(--red-crit);color:#fff;}
+@media(max-width:600px){#octs-grid{grid-template-columns:1fr;}#session-bar{gap:12px;}}
 </style>
 </head>
 <body>
+
 <div id="header">
-  <div class="brand">MedAware <span>COORDONNATEUR</span></div>
+  <button id="btn-retour" onclick="retourSetup()" title="Retour" style="background:none;border:none;cursor:pointer;padding:4px 8px;display:none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#5e9e70" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <div class="brand">MedAware<small>COORDONNATEUR</small></div>
   <span class="coord-badge">COORD</span>
-  <div id="fb-badge" style="font-size:11px;color:var(--text-muted);">Initialisation...</div>
-  <div style="margin-left:auto;font-family:var(--font-mono);font-size:20px;color:var(--od-lit);" id="horloge">--</div>
+  <span id="fb-badge">Initialisation…</span>
+  <!-- Code session visible en permanence dans le header -->
+  <div id="header-session-block" style="display:none;align-items:center;gap:8px;">
+    <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text-sec);text-transform:uppercase;">Session</div>
+    <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--od-lit);letter-spacing:4px;cursor:pointer;" id="header-code-display" onclick="copierCode()" title="Cliquer pour copier">------</div>
+    <button onclick="copierCode()" style="background:var(--bg-hover);border:1px solid var(--border);color:var(--text-sec);font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:var(--font-ui);">📋</button>
+    <button onclick="retourSetup()" style="background:var(--bg-hover);border:1px solid var(--border);color:var(--text-sec);font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:var(--font-ui);">⚙ Session</button>
+  </div>
+  <div id="horloge">--:--:--</div>
 </div>
+
 <div id="setup-panel">
   <div class="setup-card">
-    <div class="setup-title">Creer une session d'exercice</div>
+    <div class="setup-title">Créer une session</div>
     <label class="setup-label">Nom de l'exercice</label>
     <input class="setup-input" id="inp-exercice" placeholder="Ex: MASCAL-RB-2026" autocomplete="off">
-    <label class="setup-label">Votre nom (coordonnateur)</label>
+    <label class="setup-label">Votre nom</label>
     <input class="setup-input" id="inp-coord-nom" placeholder="Ex: Sgt Tremblay" autocomplete="off">
-    <button class="btn-primary" onclick="creerSession()">Creer la session</button>
-    <div id="code-created-block" style="display:none;margin-top:20px;">
+    <button class="btn-primary" onclick="creerSession()">Créer la session</button>
+    <div id="code-created-block" style="display:none;">
       <div class="code-block">
-        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px;">CODE DE SESSION</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-sec);margin-bottom:8px;">CODE DE SESSION</div>
         <div class="code-value" id="code-display">------</div>
         <div class="code-hint">Les OCTs entrent ce code dans MedAware</div>
       </div>
-      <button class="btn-copy" onclick="copierCode()">Copier le code</button>
-      <button class="btn-primary" style="margin-top:10px;" onclick="ouvrirDashboard()">Ouvrir le tableau de bord</button>
+      <button class="btn-primary" onclick="ouvrirDashboard()">Ouvrir le tableau de bord →</button>
+      <button class="btn-secondary" onclick="copierCode()">📋 Copier le code</button>
     </div>
-    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
-      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:12px;">Rejoindre une session existante</div>
-      <input class="setup-input" id="inp-join-code" placeholder="Code de session" style="text-transform:uppercase;letter-spacing:3px;font-family:var(--font-mono);" autocomplete="off">
-      <button class="btn-primary" style="background:var(--blue-info);" onclick="rejoindreDashboard()">Ouvrir ce tableau</button>
-    </div>
+    <hr class="divider">
+    <div style="font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:12px;">Rejoindre une session existante</div>
+    <label class="setup-label">Code de session</label>
+    <input class="setup-input" id="inp-join-code" placeholder="XXXXXX"
+      style="text-transform:uppercase;letter-spacing:4px;font-family:var(--font-mono);font-size:22px;"
+      autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+    <button class="btn-secondary" style="border-color:var(--blue);color:var(--blue-lit);" onclick="rejoindreDashboard()">Rejoindre →</button>
   </div>
 </div>
+
 <div id="dashboard">
   <div id="session-bar">
-    <div><div class="sbar-label">Session</div><div class="sbar-value" id="dash-code">------</div></div>
+    <div><div class="sbar-label">Session</div><div class="sbar-val" id="dash-code">------</div></div>
     <div class="sbar-sep"></div>
-    <div><div class="sbar-label">Exercice</div><div class="sbar-sub" id="dash-exo">--</div></div>
+    <div><div class="sbar-label">Exercice</div><div class="sbar-val sm" id="dash-exo">--</div></div>
     <div class="sbar-sep"></div>
-    <div><div class="sbar-label">OCTs connectes</div><div id="conn-count">0</div></div>
+    <div><div class="sbar-label">OCTs connectés</div><div id="conn-count">0</div></div>
     <div class="sbar-sep"></div>
-    <div><div class="sbar-label">Coordonnateur</div><div class="sbar-sub" id="dash-coord">--</div></div>
-    <button class="btn-danger" onclick="if(confirm('Effacer?')) effacerSession()">Effacer session</button>
+    <div><div class="sbar-label">Coordonnateur</div><div class="sbar-val sm" id="dash-coord">--</div></div>
+    <button class="btn-effacer" onclick="if(confirm('Effacer la session?'))effacerSession()">Effacer session</button>
   </div>
-  <div id="octs-table-wrap">
-    <table id="octs-table">
-      <thead><tr>
-        <th style="width:14px;"></th><th>OCT</th><th>Qualification</th>
-        <th>Scenario</th><th>Etape actuelle</th><th>Heure</th>
-      </tr></thead>
-      <tbody id="octs-tbody">
-        <tr id="no-octs-row">
-          <td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px;font-size:13px;">
-            En attente des OCTs...<br>
-            <span style="font-size:11px;">Code : <strong id="wait-code">--</strong></span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div id="octs-grid">
+    <div id="no-octs">
+      <strong>En attente des OCTs…</strong>
+      Les OCTs doivent entrer le code <span id="wait-code" style="color:var(--od-lit);font-family:var(--font-mono);letter-spacing:2px;">--</span> dans MedAware
+    </div>
   </div>
   <div id="historique-panel">
     <div class="hist-header">
-      Historique des evenements
-      <button onclick="effacerHistorique()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);font-family:var(--font-ui);font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;margin-left:auto;">Effacer</button>
+      📋 Historique des événements
+      <button class="btn-hclear" onclick="effacerHistorique()">Effacer</button>
     </div>
-    <div id="hist-list"><div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">Aucun evenement</div></div>
+    <div id="hist-list"><div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">Aucun événement</div></div>
   </div>
 </div>
-<div id="fb-status-bar" class="offline">Hors ligne</div>
+
+<div id="fb-status-bar" class="offline">● Hors ligne</div>
+
 <script>
 'use strict';
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAMNTR0OD4PmX_LzqGXhroWQW-603aF5Uw",
-  authDomain: "medaware-a2680.firebaseapp.com",
-  databaseURL: "https://medaware-a2680-default-rtdb.firebaseio.com",
-  projectId: "medaware-a2680",
-  storageBucket: "medaware-a2680.firebasestorage.app",
-  messagingSenderId: "351117839918",
-  appId: "1:351117839918:web:05428316036cd7d447d9bf"
+const FB_CFG = {
+  apiKey:"AIzaSyAMNTR0OD4PmX_LzqGXhroWQW-603aF5Uw",
+  authDomain:"medaware-a2680.firebaseapp.com",
+  databaseURL:"https://medaware-a2680-default-rtdb.firebaseio.com",
+  projectId:"medaware-a2680",
+  storageBucket:"medaware-a2680.firebasestorage.app",
+  messagingSenderId:"351117839918",
+  appId:"1:351117839918:web:05428316036cd7d447d9bf"
 };
 let fbApp=null,fbDb=null,currentCode='',coordNom='',exerciceNom='',octsData={},histData=[];
-setInterval(function(){
-  var el=document.getElementById('horloge');
+
+setInterval(()=>{
+  const el=document.getElementById('horloge');
   if(el) el.textContent=new Date().toLocaleTimeString('fr-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 },1000);
+
 function fbInit(){
   if(fbApp) return true;
   try{
-    fbApp=firebase.initializeApp(FIREBASE_CONFIG);
+    fbApp=firebase.initializeApp(FB_CFG);
     fbDb=firebase.database();
-    fbDb.ref('.info/connected').on('value',function(snap){
-      setFbStatus(snap.val()?'connected':'offline',snap.val()?'Firebase connecte':'Hors ligne');
+    fbDb.ref('.info/connected').on('value',s=>{
+      setFbStatus(s.val()?'connected':'offline',s.val()?'✓ Firebase connecté':'● Hors ligne');
     });
     return true;
-  }catch(e){setFbStatus('error','Erreur Firebase');console.warn(e);return false;}
+  }catch(e){setFbStatus('error','● Erreur Firebase');console.warn(e);return false;}
 }
 function setFbStatus(cls,txt){
-  var el=document.getElementById('fb-status-bar');
-  var badge=document.getElementById('fb-badge');
+  const el=document.getElementById('fb-status-bar');
+  const badge=document.getElementById('fb-badge');
   if(el){el.className=cls;el.textContent=txt;}
-  if(badge){badge.textContent=txt;badge.style.color=cls==='connected'?'var(--od-lit)':cls==='error'?'var(--red-lit)':'var(--text-muted)';}
+  if(badge){badge.textContent=txt;badge.style.color=cls==='connected'?'var(--od-lit)':cls==='error'?'var(--red-lit)':'var(--text-sec)';}
 }
 function genCode(){
-  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},function(){return chars[Math.floor(Math.random()*chars.length)];}).join('');
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
 function creerSession(){
-  var exo=document.getElementById('inp-exercice').value.trim()||'Exercice MedAware';
-  var nom=document.getElementById('inp-coord-nom').value.trim()||'Coordonnateur';
-  var code=genCode();
+  const exo=document.getElementById('inp-exercice').value.trim()||'Exercice MedAware';
+  const nom=document.getElementById('inp-coord-nom').value.trim()||'Coordonnateur';
+  const code=genCode();
   exerciceNom=exo;coordNom=nom;currentCode=code;
   document.getElementById('code-display').textContent=code;
   document.getElementById('code-created-block').style.display='';
-  localStorage.setItem('coord_code',code);
-  localStorage.setItem('coord_nom',nom);
-  localStorage.setItem('coord_exo',exo);
-  if(fbInit()){
-    fbDb.ref('sessions/'+code+'/meta').set({code:code,exercice:exo,coord:nom,createdAt:Date.now()});
-  }
+  localStorage.setItem('coord_code',code);localStorage.setItem('coord_nom',nom);localStorage.setItem('coord_exo',exo);
+  if(fbInit()) fbDb.ref(`sessions/${code}/meta`).set({code,exercice:exo,coord:nom,createdAt:Date.now()});
 }
 function copierCode(){
   if(navigator.clipboard) navigator.clipboard.writeText(currentCode);
-  showToast('Code copie: '+currentCode);
+  showToast('Code copié : '+currentCode);
 }
 function ouvrirDashboard(){
   if(!currentCode) return;
-  document.getElementById('setup-panel').style.display='none';
-  document.getElementById('dashboard').style.display='';
-  document.getElementById('dash-code').textContent=currentCode;
-  document.getElementById('dash-exo').textContent=exerciceNom;
-  document.getElementById('dash-coord').textContent=coordNom;
-  document.getElementById('wait-code').textContent=currentCode;
+  _afficherDashboard(currentCode,exerciceNom,coordNom);
   _ecouterSession(currentCode);
 }
 function rejoindreDashboard(){
-  var code=document.getElementById('inp-join-code').value.trim().toUpperCase();
+  const code=document.getElementById('inp-join-code').value.trim().toUpperCase();
   if(!code){alert('Entrez un code.');return;}
   currentCode=code;
   coordNom=localStorage.getItem('coord_nom')||'Coordonnateur';
   exerciceNom=localStorage.getItem('coord_exo')||'--';
+  _afficherDashboard(code,exerciceNom,coordNom);
+  _ecouterSession(code);
+}
+function _afficherDashboard(code,exo,coord){
   document.getElementById('setup-panel').style.display='none';
   document.getElementById('dashboard').style.display='';
   document.getElementById('dash-code').textContent=code;
-  document.getElementById('dash-exo').textContent=exerciceNom;
-  document.getElementById('dash-coord').textContent=coordNom;
+  document.getElementById('dash-exo').textContent=exo;
+  document.getElementById('dash-coord').textContent=coord;
   document.getElementById('wait-code').textContent=code;
-  _ecouterSession(code);
+  // Afficher code dans le header
+  const hb=document.getElementById('header-session-block');
+  if(hb){ hb.style.display='flex'; }
+  document.getElementById('header-code-display').textContent=code;
+}
+
+function retourSetup(){
+  // Retour à l'écran setup sans perdre la session
+  document.getElementById('setup-panel').style.display='';
+  document.getElementById('dashboard').style.display='none';
+  // Pré-remplir le code pour rejoindre facilement
+  document.getElementById('inp-join-code').value=currentCode;
 }
 function _ecouterSession(code){
   fbInit();
   if(!fbDb){_demoData();return;}
-  fbDb.ref('sessions/'+code+'/octs').on('value',function(snap){
-    octsData=snap.val()||{};renderTableau();
+  fbDb.ref(`sessions/${code}/octs`).on('value',s=>{octsData=s.val()||{};renderOCTs();});
+  fbDb.ref(`sessions/${code}/historique`).limitToLast(80).on('child_added',s=>{
+    const d=s.val();if(!d)return;
+    histData.unshift(d);if(histData.length>120)histData.pop();renderHistorique();
   });
-  fbDb.ref('sessions/'+code+'/historique').limitToLast(50).on('child_added',function(snap){
-    var d=snap.val();if(!d)return;
-    histData.unshift(d);if(histData.length>100)histData.pop();renderHistorique();
-  });
-  fbDb.ref('sessions/'+code+'/meta').once('value',function(snap){
-    var meta=snap.val();
-    if(meta){
-      if(meta.exercice)document.getElementById('dash-exo').textContent=meta.exercice;
-      if(meta.coord)document.getElementById('dash-coord').textContent=meta.coord;
+  fbDb.ref(`sessions/${code}/meta`).once('value',s=>{
+    const m=s.val();
+    if(m){
+      if(m.exercice) document.getElementById('dash-exo').textContent=m.exercice;
+      if(m.coord)    document.getElementById('dash-coord').textContent=m.coord;
     }
   });
 }
-function renderTableau(){
-  var tbody=document.getElementById('octs-tbody');
-  var noRow=document.getElementById('no-octs-row');
-  var octs=Object.values(octsData);
-  document.getElementById('conn-count').textContent=octs.length;
-  if(octs.length===0){tbody.innerHTML='';tbody.appendChild(noRow);noRow.style.display='';return;}
-  noRow.style.display='none';
-  octs.sort(function(a,b){return(b.ts||0)-(a.ts||0);});
-  tbody.innerHTML=octs.map(function(oct){
-    var isRecent=(Date.now()-(oct.ts||0))<120000;
-    var ec=_etapeClass(oct.etape||'');
-    return '<tr class="tr-oct">'+
-      '<td><span class="live-dot '+(isRecent?'active':'idle')+'"></span></td>'+
-      '<td><div class="oct-nom-cell">'+esc(oct.octNom||'--')+
-        '<span class="oct-qual">'+esc(oct.qual||'--')+'</span></div></td>'+
-      '<td style="color:var(--text-secondary);font-size:12px;">'+esc(oct.qual||'--')+'</td>'+
-      '<td style="color:var(--text-secondary);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(oct.scenario||'--')+'</td>'+
-      '<td><span class="etape-badge '+ec+'">'+esc(oct.etape||'--')+'</span></td>'+
-      '<td style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);">'+esc(oct.heure||'--')+'</td>'+
-      '</tr>';
+
+const MARCHE=['M','A','R','C','H','E'];
+function _marcheIdx(etape){
+  const e=(etape||'').toLowerCase();
+  if(e.includes('load')&&!e.includes('un')) return 5;
+  if(e.includes('unload')||e.includes('évac')||e.includes('evac')) return 6;
+  if(e.includes('fin')) return 7;
+  if(e.includes('hypoth')||e.includes('couverture')||e.includes('chaud')) return 4;
+  if(e.includes('circu')||e.includes(' iv ')||e.includes(' io ')) return 3;
+  if(e.includes('respir')||e.includes('thorax')||e.includes('ncd')) return 2;
+  if(e.includes('airway')||e.includes('voies')||e.includes('canule')) return 1;
+  if(e.includes('début')||e.includes('debut')||e.includes('présence')||e.includes('presence')) return 0;
+  return -1;
+}
+function _marchePct(etape){
+  const idx=_marcheIdx(etape);
+  return MARCHE.map((s,i)=>{
+    const cls=idx>6?'done':i<idx?'done':i===idx?'active':'';
+    return `<div class="ms ${cls}" title="${s}"><span class="ms-label">${s}</span></div>`;
   }).join('');
+}
+function _prioBadge(prio){
+  if(!prio) return '<span class="prio-badge uk">Priorité —</span>';
+  const p=String(prio).toUpperCase();
+  if(p.includes('T1')||p.includes('URGENT')||p.includes('IMMÉDIAT')) return '<span class="prio-badge T1">● T1 URGENT</span>';
+  if(p.includes('T2')||p.includes('DIFFÉRÉ')||p.includes('DIFFERE')) return '<span class="prio-badge T2">● T2 DIFFÉRÉ</span>';
+  if(p.includes('T3')||p.includes('MINIMAL')||p.includes('MINEUR'))  return '<span class="prio-badge T3">● T3 MINIMAL</span>';
+  return '<span class="prio-badge uk">● '+esc(prio)+'</span>';
 }
 function _etapeClass(e){
-  e=e.toLowerCase();
-  if(e.indexOf('but')!==-1||e.indexOf('but')!==-1)return 'debut';
-  if(e.indexOf('load')!==-1&&e.indexOf('un')===-1)return 'load';
-  if(e.indexOf('unload')!==-1)return 'unload';
-  if(e.indexOf('fin')!==-1)return 'fin';
-  if(e.indexOf('sence')!==-1)return 'presence';
+  e=(e||'').toLowerCase();
+  if(e.includes('début')||e.includes('debut')) return 'debut';
+  if(e.includes('load')&&!e.includes('un'))    return 'load';
+  if(e.includes('unload'))                     return 'unload';
+  if(e.includes('fin'))                        return 'fin';
+  if(e.includes('sence'))                      return 'presence';
   return 'default';
 }
-function renderHistorique(){
-  var list=document.getElementById('hist-list');
-  if(!histData.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">Aucun evenement</div>';return;}
-  list.innerHTML=histData.map(function(d){
-    return '<div class="hist-entry">'+
-      '<span class="hist-time">'+esc(d.heure||'--')+'</span>'+
-      '<span class="hist-oct">'+esc(d.octNom||'--')+'</span>'+
-      '<span class="hist-etape">'+esc(d.etape||'--')+'</span>'+
-      '<span class="hist-sc">'+esc(d.scenario||'')+'</span>'+
-      '</div>';
+function _elapsed(ts){
+  const s=Math.floor((Date.now()-(ts||Date.now()))/1000);
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+function renderOCTs(){
+  const grid=document.getElementById('octs-grid');
+  const octs=Object.values(octsData);
+  document.getElementById('conn-count').textContent=octs.length;
+  if(!octs.length){
+    grid.innerHTML=`<div id="no-octs"><strong>En attente des OCTs…</strong>Code : <span style="color:var(--od-lit);font-family:var(--font-mono);letter-spacing:2px;">${currentCode}</span></div>`;
+    return;
+  }
+  octs.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  grid.innerHTML=octs.map(oct=>{
+    const recent=(Date.now()-(oct.ts||0))<90000;
+    const key=esc(oct.octKey||oct.octNom||'');
+    return `<div class="oct-card ${recent?'recent':'stale'}">
+      <div class="oct-card-header">
+        <span class="live-dot ${recent?'live':''}"></span>
+        <div style="flex:1;min-width:0;">
+          <div class="oct-nom">${esc(oct.octNom||'OCT')}</div>
+          <div class="oct-qual">${esc(oct.qual||'--')}</div>
+        </div>
+        <div class="oct-elapsed" id="el-${key}">${_elapsed(oct.ts)}</div>
+      </div>
+      <div class="oct-card-body">
+        <div class="oct-scenario ${oct.scenario?'':'empty'}">${esc(oct.scenario||'Aucun scénario actif')}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${_prioBadge(oct.prio||oct.scenario)}
+          <span class="etape-badge ${_etapeClass(oct.etape||'')}">${esc((oct.etape||'—').substring(0,28))}</span>
+        </div>
+        <div style="margin-top:6px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;">M — A — R — C — H — E</div>
+          <div class="marche-bar">${_marchePct(oct.etape||'')}</div>
+        </div>
+        <div class="oct-heure">Dernière maj : ${esc(oct.heure||'--')}</div>
+      </div>
+    </div>`;
   }).join('');
 }
+
+function renderHistorique(){
+  const list=document.getElementById('hist-list');
+  if(!histData.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">Aucun événement</div>';return;}
+  list.innerHTML=histData.map(d=>`<div class="hist-entry">
+    <span class="hist-time">${esc(d.heure||'--')}</span>
+    <span class="hist-oct">${esc(d.octNom||'--')}</span>
+    <span class="hist-etape">${esc(d.etape||'--')}</span>
+    <span class="hist-sc">${esc(d.scenario||'')}</span>
+  </div>`).join('');
+}
+
 function effacerSession(){
-  if(!fbDb||!currentCode){octsData={};histData=[];renderTableau();renderHistorique();return;}
-  fbDb.ref('sessions/'+currentCode+'/octs').remove();
-  octsData={};renderTableau();
+  if(fbDb&&currentCode) fbDb.ref(`sessions/${currentCode}/octs`).remove();
+  octsData={};renderOCTs();
 }
 function effacerHistorique(){
-  if(!fbDb||!currentCode){histData=[];renderHistorique();return;}
-  fbDb.ref('sessions/'+currentCode+'/historique').remove();
+  if(fbDb&&currentCode) fbDb.ref(`sessions/${currentCode}/historique`).remove();
   histData=[];renderHistorique();
 }
+
 function _demoData(){
-  setTimeout(function(){
+  setTimeout(()=>{
     octsData={
-      'oct1':{octNom:'Cpl Tremblay',qual:'Medic',scenario:'Hemorragie massive',etape:'DEBUT - Prise en charge',heure:'14:32:10',ts:Date.now()-10000},
-      'oct2':{octNom:'MCpl Roy',qual:'TCCC',scenario:'Thorax aspirant',etape:'LOAD - Embarquement',heure:'14:35:44',ts:Date.now()-65000},
-      'oct3':{octNom:'Cpl Gagnon',qual:'Medic',scenario:'TBI severe',etape:'FIN - Exercice termine',heure:'14:28:02',ts:Date.now()-200000}
+      'oct1':{octNom:'Cpl Tremblay',qual:'Médic',scenario:'Hémorragie massive — T1',prio:'T1',etape:'🚨 DÉBUT — Prise en charge',heure:'14:32:10',ts:Date.now()-15000,octKey:'oct1'},
+      'oct2':{octNom:'MCpl Roy',qual:'TCCC',scenario:'Thorax aspirant — T1',prio:'T1',etape:'🚁 LOAD — Embarquement',heure:'14:35:44',ts:Date.now()-70000,octKey:'oct2'},
+      'oct3':{octNom:'Cpl Gagnon',qual:'Médic',scenario:'TBI sévère — T2',prio:'T2',etape:'⏹ FIN — Exercice terminé',heure:'14:28:02',ts:Date.now()-250000,octKey:'oct3'}
     };
     histData=[
-      {octNom:'Cpl Tremblay',etape:'DEBUT',scenario:'Hemorragie massive',heure:'14:32:10'},
+      {octNom:'Cpl Tremblay',etape:'DÉBUT',scenario:'Hémorragie massive',heure:'14:32:10'},
       {octNom:'MCpl Roy',etape:'LOAD',scenario:'Thorax aspirant',heure:'14:35:44'},
-      {octNom:'Cpl Gagnon',etape:'FIN',scenario:'TBI severe',heure:'14:28:02'}
+      {octNom:'Cpl Gagnon',etape:'FIN',scenario:'TBI sévère',heure:'14:28:02'}
     ];
-    renderTableau();renderHistorique();
-    setFbStatus('offline','MODE DEMO - Firebase non configure');
-  },800);
+    renderOCTs();renderHistorique();
+    setFbStatus('offline','● MODE DÉMO');
+  },600);
 }
+
+setInterval(()=>{
+  Object.values(octsData).forEach(oct=>{
+    const key=esc(oct.octKey||oct.octNom||'');
+    const el=document.getElementById('el-'+key);
+    if(el&&oct.ts) el.textContent=_elapsed(oct.ts);
+  });
+},5000);
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showToast(msg){
-  var t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#0d1f14;border:1px solid var(--od-green);border-radius:6px;padding:8px 18px;color:var(--od-lit);font-size:13px;z-index:600;';
-  t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2000);
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#0d1f14;border:1px solid var(--od-green);border-radius:6px;padding:8px 18px;color:var(--od-lit);font-size:13px;z-index:600;white-space:nowrap;';
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);
 }
+
 (function(){
-  var c=localStorage.getItem('coord_code')||'';
+  const c=localStorage.getItem('coord_code')||'';
   if(c){
     document.getElementById('inp-exercice').value=localStorage.getItem('coord_exo')||'';
     document.getElementById('inp-coord-nom').value=localStorage.getItem('coord_nom')||'';
     document.getElementById('inp-join-code').value=c;
+    // Restaurer automatiquement la session active
+    currentCode=c;
+    coordNom=localStorage.getItem('coord_nom')||'Coordonnateur';
+    exerciceNom=localStorage.getItem('coord_exo')||'--';
+    _afficherDashboard(c,exerciceNom,coordNom);
+    _ecouterSession(c);
   }
   fbInit();
 })();

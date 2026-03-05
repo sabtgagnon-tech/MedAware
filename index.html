@@ -3781,7 +3781,6 @@ body {
       <button id="ps-toggle-btn" onclick="togglePresessionBar()" title="Afficher/masquer les options">
         <span>OPTIONS</span><span class="ps-toggle-arrow">▼</span>
       </button>
-      <button class="hdr-btn" onclick="openReseau()" style="border-color:var(--amber);color:var(--amber-lit);">🌐 Équipe</button>
       <button class="hdr-btn" onclick="showScreen('ressources')" style="border-color:var(--blue-lit);color:var(--blue-lit);">📁 Ressources</button>
       <button class="hdr-btn" onclick="openModalQR()" title="QR Code de téléchargement" style="border-color:var(--muted);color:var(--text-muted);">📲 QR</button>
       <button class="hdr-btn primary" onclick="openLibre()">➕ Nouveau (Libre)</button>
@@ -6156,94 +6155,7 @@ function _playRappelSound(type) {
 </div>
 
 <!-- ═══ MODAL RÉSEAU / ÉQUIPE ═══ -->
-<div class="modal-overlay" id="modal-reseau">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-title" style="font-size:18px;">🌐 Mode Réseau — Équipe</div>
 
-    <div class="reseau-tabs">
-      <button class="reseau-tab active" id="rtab-creer" onclick="switchReseauTab('creer')">Créer une équipe</button>
-      <button class="reseau-tab" id="rtab-rejoindre" onclick="switchReseauTab('rejoindre')">Rejoindre</button>
-      <button class="reseau-tab" id="rtab-tableau" onclick="switchReseauTab('tableau')">Tableau de bord</button>
-    </div>
-
-    <!-- Tab: Créer -->
-    <div class="reseau-tabcontent active" id="rcon-creer">
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label">Nom de l'équipe / Exercice</label>
-        <input class="form-input" id="reseau-team-name" placeholder="ex. FMST-OCT-2026 — Groupe Alpha" style="user-select:text;">
-      </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Rôle</label>
-        <select class="form-select" id="reseau-role">
-          <option value="coord">Coordonnateur d'exercice</option>
-          <option value="oct">OCT — Équipier</option>
-        </select>
-      </div>
-      <button class="modal-btn confirm" onclick="creerEquipe()" style="width:100%;">Créer l'équipe ▶</button>
-
-      <div id="team-created-block" style="display:none;margin-top:14px;">
-        <div class="team-code-display">
-          <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px;">CODE D'ÉQUIPE</div>
-          <div class="team-code-value" id="team-code-display">——</div>
-          <div class="team-code-hint">Partagez ce code aux membres pour qu'ils rejoignent</div>
-        </div>
-        <div style="font-size:12px;color:var(--od-lit);text-align:center;margin-top:6px;" id="team-created-info"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Rejoindre -->
-    <div class="reseau-tabcontent" id="rcon-rejoindre">
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label">Code d'équipe</label>
-        <input class="form-input" id="reseau-join-code" placeholder="ex. ALPHA7" maxlength="8" style="user-select:text;letter-spacing:4px;font-family:var(--font-mono);font-size:18px;text-align:center;text-transform:uppercase;">
-      </div>
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label">Indicatif / Nom OCT</label>
-        <input class="form-input" id="reseau-pseudo" placeholder="ex. OCT-2 Tremblay" style="user-select:text;">
-      </div>
-      <button class="modal-btn confirm" onclick="rejoindreEquipe()" style="width:100%;">Rejoindre ▶</button>
-      <div id="join-status" style="display:none;margin-top:10px;font-size:13px;color:var(--od-lit);text-align:center;padding:10px;background:#0d1f14;border-radius:4px;border:1px solid var(--od-green);"></div>
-    </div>
-
-    <!-- Tab: Tableau de bord -->
-    <div class="reseau-tabcontent" id="rcon-tableau">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;" id="tableau-team-name">— Aucune équipe active —</div>
-        <div style="display:flex;gap:6px;">
-          <button onclick="refreshTableau()" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);font-family:var(--font-ui);font-size:11px;padding:4px 10px;border-radius:3px;cursor:pointer;">⟳ Actualiser</button>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:8px 14px;text-align:center;flex:1;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:22px;color:var(--od-lit);" id="t-count-done">0</div>
-          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;">TERMINÉS</div>
-        </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:8px 14px;text-align:center;flex:1;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:22px;color:var(--amber-lit);" id="t-count-cours">0</div>
-          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;">EN COURS</div>
-        </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:8px 14px;text-align:center;flex:1;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:22px;color:var(--text-secondary);" id="t-count-attente">0</div>
-          <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;">EN ATTENTE</div>
-        </div>
-      </div>
-
-      <div id="tableau-scenarios" style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;">
-        <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">Créez ou rejoignez une équipe pour voir le tableau</div>
-      </div>
-
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;" id="coord-tools" style="display:none;">
-        <button onclick="marquerScenario('en-cours')" class="modal-btn" style="border-color:var(--amber);background:#1a1200;color:var(--amber-lit);flex:1;">⏱ Marquer En cours</button>
-        <button onclick="marquerScenario('termine')" class="modal-btn confirm" style="flex:1;">✓ Marquer Terminé</button>
-      </div>
-    </div>
-
-    <div class="modal-actions" style="margin-top:14px;">
-      <button class="modal-btn cancel" onclick="closeModal('reseau')">Fermer</button>
-    </div>
-  </div>
-</div>
 
 <!-- PHOTO NOTIF -->
 <div id="photo-notif">📸 Photo capturée — <span id="photo-time"></span></div>
