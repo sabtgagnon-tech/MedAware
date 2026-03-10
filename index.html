@@ -3739,6 +3739,44 @@ body {
 #firebase-status.offline { background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border); }
 #firebase-status.connected { background: #0d1f14; color: var(--od-lit); border: 1px solid var(--od-green); }
 #firebase-status.error { background: #1a0000; color: var(--red-lit); border: 1px solid var(--red-crit); }
+
+/* ═══ MODAL PROFIL OCT ═══ */
+#modal-profil .modal { max-width: 520px; }
+.profil-view { display: none; }
+.profil-view.active { display: block; }
+.profil-section { margin-bottom: 18px; }
+.profil-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; display: block; }
+.profil-input { width: 100%; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: var(--font-ui); font-size: 15px; padding: 9px 12px; outline: none; margin-bottom: 10px; transition: border-color .15s; box-sizing: border-box; }
+.profil-input:focus { border-color: var(--amber); }
+.profil-input.pin { letter-spacing: 6px; font-family: var(--font-mono); font-size: 20px; text-align: center; }
+.profil-btn { width: 100%; border: none; border-radius: 4px; font-family: var(--font-ui); font-size: 15px; font-weight: 700; padding: 11px; cursor: pointer; letter-spacing: 1px; margin-bottom: 8px; transition: all .15s; }
+.profil-btn.primary { background: var(--amber); color: #fff; }
+.profil-btn.primary:hover { background: var(--amber-lit); }
+.profil-btn.secondary { background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-sec); }
+.profil-btn.secondary:hover { border-color: var(--amber); color: var(--amber-lit); }
+.profil-btn.danger { background: transparent; border: 1px solid var(--red); color: var(--red-lit); font-size: 13px; padding: 7px; }
+.profil-err { font-size: 12px; color: var(--red-lit); background: #1a0000; border: 1px solid var(--red); border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; display: none; }
+.profil-err.show { display: block; }
+/* Stats */
+.profil-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.profil-stat-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 8px; text-align: center; }
+.profil-stat-val { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--amber-lit); }
+.profil-stat-lbl { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+/* Scores MARCHE */
+.marche-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 14px; }
+.marche-stat { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px; text-align: center; }
+.marche-stat-letter { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--od-lit); }
+.marche-stat-score { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 2px; }
+.marche-stat-score.na { color: var(--text-muted); }
+/* Historique inline */
+.profil-hist-entry { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.profil-hist-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.profil-hist-date { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+.profil-hist-sc { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+.profil-hist-score { font-size: 12px; font-weight: 700; color: var(--amber-lit); background: var(--bg-hover); border: 1px solid var(--amber); border-radius: 3px; padding: 1px 6px; }
+.profil-hist-meta { font-size: 11px; color: var(--text-muted); }
+/* Badge connecté dans le bouton header */
+#btn-profil.connected { border-color: var(--od-green) !important; color: var(--od-lit) !important; }
 </style>
 </head>
 <body>
@@ -3783,6 +3821,7 @@ body {
       </button>
       <button class="hdr-btn" onclick="showScreen('ressources')" style="border-color:var(--blue-lit);color:var(--blue-lit);">📁 Ressources</button>
       <button class="hdr-btn" onclick="openModalQR()" title="QR Code de téléchargement" style="border-color:var(--muted);color:var(--text-muted);">📲 QR</button>
+      <button class="hdr-btn" id="btn-profil" onclick="ouvrirProfil()" title="Profil OCT" style="border-color:var(--amber);color:var(--amber-lit);">👤 Profil</button>
       <button class="hdr-btn primary" onclick="openLibre()">➕ Nouveau (Libre)</button>
     </div>
   </div>
@@ -6297,6 +6336,8 @@ function lsSaveAAR(aarText, format) {
     // Garder max 50 AAR
     if (history.length > 50) history.splice(50);
     localStorage.setItem(LS_KEYS.HISTORY, JSON.stringify(history));
+    // Sync Firebase si profil connecté
+    if (_profilCourant) _profilSauvegarderAAR(entry);
     return entry;
   } catch(e) {
     console.warn('[ShockLine] lsSaveAAR error:', e);
@@ -11601,6 +11642,279 @@ function _fbAfficherBanniereConnexion(code, meta) {
   setTimeout(() => { if (banner.parentElement) banner.remove(); }, 8000);
 }
 
+// ══════════════════════════════════════════════════════════════
+//   SYSTÈME DE PROFIL OCT — Authentification code PIN + Firebase
+// ══════════════════════════════════════════════════════════════
+
+let _profilCourant = null;  // Profil connecté, ou null
+
+const _PROFIL_LS_KEY = 'sl_profil_session';
+
+// ── Sanitiser le matricule pour en faire une clé Firebase valide ──
+function _profilSanitize(mat) {
+  return mat.trim().toUpperCase().replace(/[^A-Z0-9]/g, '_');
+}
+
+// ── Changer de vue dans le modal ──
+function _profilVue(vue) {
+  document.querySelectorAll('.profil-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('profil-vue-' + vue).classList.add('active');
+  const titles = { login: '👤 Connexion OCT', create: '👤 Créer un profil', dashboard: '👤 Mon profil' };
+  document.getElementById('profil-modal-title').textContent = titles[vue] || '👤 Profil';
+  // Effacer les erreurs
+  ['login-err','create-err'].forEach(id => { const e=document.getElementById(id); if(e) e.classList.remove('show'); });
+}
+
+function ouvrirProfil() {
+  if (_profilCourant) {
+    _profilAfficherDashboard();
+    _profilVue('dashboard');
+  } else {
+    _profilVue('login');
+  }
+  openModal('profil');
+}
+
+// ── Connexion ──
+async function _profilConnecter() {
+  const mat = (document.getElementById('login-matricule').value || '').trim().toUpperCase();
+  const pin = (document.getElementById('login-pin').value || '').trim();
+  const err = document.getElementById('login-err');
+
+  if (!mat || !pin) { err.textContent = 'Matricule et PIN requis.'; err.classList.add('show'); return; }
+  if (pin.length < 4) { err.textContent = 'Le PIN doit faire au moins 4 chiffres.'; err.classList.add('show'); return; }
+
+  const ok = await _fbInit();
+  if (!ok || !_fbDb) { err.textContent = 'Connexion Firebase indisponible. Vérifie ta connexion réseau.'; err.classList.add('show'); return; }
+
+  const key = _profilSanitize(mat);
+  try {
+    const snap = await _fbDb.ref(`profils/${key}`).once('value');
+    const data = snap.val();
+    if (!data) { err.textContent = 'Aucun profil trouvé pour ce matricule.'; err.classList.add('show'); return; }
+    if (data.pin !== pin) { err.textContent = 'Code PIN incorrect.'; err.classList.add('show'); return; }
+
+    _profilCourant = { ...data, key };
+    localStorage.setItem(_PROFIL_LS_KEY, JSON.stringify(_profilCourant));
+    _profilOnConnecte();
+    _profilVue('dashboard');
+    showToast('✅ Connecté — ' + data.prenom + ' ' + data.nom, 'success');
+  } catch(e) {
+    err.textContent = 'Erreur réseau. Réessaie.'; err.classList.add('show');
+  }
+}
+
+// ── Créer un profil ──
+async function _profilCreer() {
+  const prenom  = (document.getElementById('create-prenom').value || '').trim();
+  const nom     = (document.getElementById('create-nom').value || '').trim();
+  const grade   = (document.getElementById('create-grade').value || '').trim();
+  const mat     = (document.getElementById('create-matricule').value || '').trim().toUpperCase();
+  const qual    = document.getElementById('create-qual').value;
+  const pin     = (document.getElementById('create-pin').value || '').trim();
+  const pin2    = (document.getElementById('create-pin2').value || '').trim();
+  const err     = document.getElementById('create-err');
+
+  if (!prenom || !nom || !mat || !pin) { err.textContent = 'Tous les champs sont requis.'; err.classList.add('show'); return; }
+  if (pin.length < 4) { err.textContent = 'Le PIN doit faire au moins 4 chiffres.'; err.classList.add('show'); return; }
+  if (pin !== pin2) { err.textContent = 'Les deux PINs ne correspondent pas.'; err.classList.add('show'); return; }
+  if (!/^\d+$/.test(pin)) { err.textContent = 'Le PIN ne doit contenir que des chiffres.'; err.classList.add('show'); return; }
+
+  const ok = await _fbInit();
+  if (!ok || !_fbDb) { err.textContent = 'Connexion Firebase indisponible.'; err.classList.add('show'); return; }
+
+  const key = _profilSanitize(mat);
+  try {
+    const existing = await _fbDb.ref(`profils/${key}`).once('value');
+    if (existing.val()) { err.textContent = 'Ce matricule est déjà enregistré.'; err.classList.add('show'); return; }
+
+    const profil = { matricule: mat, prenom, nom, grade, qualification: qual, pin, createdAt: Date.now(),
+      stats: { sessionsTotal: 0, scoreTotalSum: 0, tempsTotal: 0, scoreParEtape: { M:null,A:null,R:null,C:null,H:null,E:null }, countParEtape: { M:0,A:0,R:0,C:0,H:0,E:0 } }
+    };
+    await _fbDb.ref(`profils/${key}`).set(profil);
+    _profilCourant = { ...profil, key };
+    localStorage.setItem(_PROFIL_LS_KEY, JSON.stringify(_profilCourant));
+    _profilOnConnecte();
+    _profilVue('dashboard');
+    showToast('✅ Profil créé — Bienvenue ' + prenom + '!', 'success');
+  } catch(e) {
+    err.textContent = 'Erreur lors de la création. Réessaie.'; err.classList.add('show');
+  }
+}
+
+// ── Déconnexion ──
+function _profilDeconnecter() {
+  _profilCourant = null;
+  localStorage.removeItem(_PROFIL_LS_KEY);
+  _profilOnDeconnecte();
+  _profilVue('login');
+  document.getElementById('login-pin').value = '';
+  showToast('Déconnecté du profil', 'success');
+}
+
+// ── Actions post-connexion/déconnexion ──
+function _profilOnConnecte() {
+  const btn = document.getElementById('btn-profil');
+  if (btn && _profilCourant) {
+    btn.textContent = '👤 ' + (_profilCourant.grade ? _profilCourant.grade + ' ' : '') + _profilCourant.nom;
+    btn.classList.add('connected');
+  }
+  // Pré-remplir le nom OCT dans la barre
+  const nomInput = document.getElementById('ps-oct-nom');
+  if (nomInput && _profilCourant) {
+    const label = [_profilCourant.grade, _profilCourant.prenom, _profilCourant.nom].filter(Boolean).join(' ');
+    nomInput.value = label;
+    saveOctNom(label);
+  }
+  // Pré-sélectionner la qualification
+  if (_profilCourant?.qualification) {
+    const qualSel = document.getElementById('ps-qual');
+    if (qualSel) { qualSel.value = _profilCourant.qualification; setQualification(_profilCourant.qualification); }
+  }
+}
+
+function _profilOnDeconnecte() {
+  const btn = document.getElementById('btn-profil');
+  if (btn) { btn.textContent = '👤 Profil'; btn.classList.remove('connected'); }
+}
+
+// ── Afficher le dashboard profil ──
+async function _profilAfficherDashboard() {
+  if (!_profilCourant) return;
+  const key = _profilCourant.key;
+
+  document.getElementById('dash-profil-nom').textContent =
+    [_profilCourant.grade, _profilCourant.prenom, _profilCourant.nom].filter(Boolean).join(' ');
+  document.getElementById('dash-profil-info').textContent =
+    (QUALIFICATIONS[_profilCourant.qualification] || {}).label || _profilCourant.qualification || '—';
+
+  // Charger stats + historique depuis Firebase
+  try {
+    await _fbInit();
+    if (!_fbDb) return;
+    const snap = await _fbDb.ref(`profils/${key}`).once('value');
+    const data = snap.val();
+    if (!data) return;
+    _profilCourant = { ..._profilCourant, ...data, key };
+    localStorage.setItem(_PROFIL_LS_KEY, JSON.stringify(_profilCourant));
+
+    // Stats globales
+    const st = data.stats || {};
+    const total = st.sessionsTotal || 0;
+    document.getElementById('stat-sessions').textContent = total;
+    if (total > 0 && st.scoreTotalSum) {
+      document.getElementById('stat-score').textContent = (st.scoreTotalSum / total).toFixed(1);
+    } else {
+      document.getElementById('stat-score').textContent = '—';
+    }
+    if (total > 0 && st.tempsTotal) {
+      const moy = Math.floor(st.tempsTotal / total);
+      document.getElementById('stat-duree').textContent = String(Math.floor(moy/60)).padStart(2,'0') + ':' + String(moy%60).padStart(2,'0');
+    } else {
+      document.getElementById('stat-duree').textContent = '—';
+    }
+
+    // Scores par étape MARCHE
+    const spe = st.scoreParEtape || {};
+    const cpe = st.countParEtape || {};
+    ['M','A','R','C','H','E'].forEach(l => {
+      const el = document.getElementById('ms-' + l);
+      if (!el) return;
+      const cnt = cpe[l] || 0;
+      if (cnt > 0 && spe[l] != null) {
+        el.textContent = (spe[l] / cnt).toFixed(1);
+        el.className = 'marche-stat-score';
+      } else {
+        el.textContent = '—'; el.className = 'marche-stat-score na';
+      }
+    });
+
+    // Historique
+    const histSnap = await _fbDb.ref(`profils/${key}/historique`).orderByChild('ts').limitToLast(20).once('value');
+    const histData = histSnap.val();
+    const listEl = document.getElementById('profil-historique-list');
+    if (!histData) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px 0;text-align:center;">Aucun scénario complété pour le moment.</div>';
+    } else {
+      const entries = Object.values(histData).sort((a,b) => (b.ts||0) - (a.ts||0));
+      listEl.innerHTML = entries.map(e => `
+        <div class="profil-hist-entry">
+          <div class="profil-hist-top">
+            <span class="profil-hist-date">${e.date || ''} ${e.heure || ''}</span>
+            <span class="profil-hist-sc">${e.scenario || '—'}</span>
+            <span class="profil-hist-score">${e.scoreGlobal != null ? e.scoreGlobal + '/10' : '—'}</span>
+          </div>
+          <div class="profil-hist-meta">
+            ⏱ ${e.duree || '—'} &nbsp;·&nbsp; ${e.actions || 0} actions &nbsp;·&nbsp; ${e.prio || '—'}
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(err) {
+    console.warn('[Profil] Erreur chargement:', err);
+  }
+}
+
+// ── Sauvegarder un AAR dans le profil Firebase ──
+async function _profilSauvegarderAAR(aarEntry) {
+  if (!_profilCourant || !aarEntry) return;
+  const key = _profilCourant.key;
+  try {
+    await _fbInit();
+    if (!_fbDb) return;
+
+    // Résumé uniquement (pas le texte complet) pour économiser la bande passante
+    const entryFb = {
+      ts:          aarEntry.id || Date.now(),
+      date:        aarEntry.date,
+      heure:       aarEntry.heure,
+      scenario:    aarEntry.scenario,
+      prio:        aarEntry.prio,
+      scoreGlobal: parseFloat(aarEntry.scoreGlobal) || null,
+      duree:       aarEntry.duree,
+      actions:     aarEntry.actions,
+      scoreParEtape: { ...S.scores },
+    };
+    await _fbDb.ref(`profils/${key}/historique`).push(entryFb);
+
+    // Mettre à jour les stats agrégées
+    await _fbDb.ref(`profils/${key}/stats`).transaction(stats => {
+      if (!stats) stats = { sessionsTotal:0, scoreTotalSum:0, tempsTotal:0, scoreParEtape:{}, countParEtape:{} };
+      stats.sessionsTotal = (stats.sessionsTotal || 0) + 1;
+      const sc = parseFloat(aarEntry.scoreGlobal);
+      if (!isNaN(sc)) stats.scoreTotalSum = (stats.scoreTotalSum || 0) + sc;
+      // Durée en secondes
+      const parts = (aarEntry.duree || '00:00').split(':');
+      const secs = parseInt(parts[0]||0)*60 + parseInt(parts[1]||0);
+      stats.tempsTotal = (stats.tempsTotal || 0) + secs;
+      // Scores par étape MARCHE
+      if (!stats.scoreParEtape) stats.scoreParEtape = {};
+      if (!stats.countParEtape) stats.countParEtape = {};
+      ['M','A','R','C','H','E'].forEach(l => {
+        const v = S.scores[l];
+        if (v != null) {
+          stats.scoreParEtape[l] = (stats.scoreParEtape[l] || 0) + v;
+          stats.countParEtape[l] = (stats.countParEtape[l] || 0) + 1;
+        }
+      });
+      return stats;
+    });
+  } catch(e) {
+    console.warn('[Profil] Erreur sauvegarde AAR:', e);
+  }
+}
+
+// ── Restaurer la session profil depuis localStorage au chargement ──
+(function _profilRestaurer() {
+  try {
+    const saved = localStorage.getItem(_PROFIL_LS_KEY);
+    if (saved) {
+      _profilCourant = JSON.parse(saved);
+      _profilOnConnecte();
+    }
+  } catch(e) { localStorage.removeItem(_PROFIL_LS_KEY); }
+})();
+
 // ── Push une étape vers le coordonnateur ──
 function _fbPushEtape(etape, detail) {
   if (!_fbDb || !_fbSessionCode) return;
@@ -12789,6 +13103,119 @@ function resetGarrotState() {
         </div>
 
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL PROFIL OCT ══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-profil">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="profil-modal-title">👤 Profil OCT</span>
+      <button class="modal-close" onclick="closeModal('profil')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+
+      <!-- VUE : CONNEXION -->
+      <div class="profil-view active" id="profil-vue-login">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+          Connecte-toi avec ton matricule et ton code PIN pour accéder à ton profil et à l'historique de tes scénarios.
+        </div>
+        <div class="profil-err" id="login-err"></div>
+        <label class="profil-label">Matricule</label>
+        <input class="profil-input" id="login-matricule" placeholder="Ex: 12345678 ou QO-J66A" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        <label class="profil-label">Code PIN (4 à 6 chiffres)</label>
+        <input class="profil-input pin" id="login-pin" type="password" placeholder="••••" maxlength="6" inputmode="numeric">
+        <button class="profil-btn primary" onclick="_profilConnecter()">🔓 Connexion</button>
+        <button class="profil-btn secondary" onclick="_profilVue('create')">Créer un profil →</button>
+      </div>
+
+      <!-- VUE : CRÉER UN PROFIL -->
+      <div class="profil-view" id="profil-vue-create">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+          Crée ton profil OCT. Ton historique de scénarios et tes statistiques MARCHE seront sauvegardés dans le nuage.
+        </div>
+        <div class="profil-err" id="create-err"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
+          <div>
+            <label class="profil-label">Prénom</label>
+            <input class="profil-input" id="create-prenom" placeholder="Ex: Marie">
+          </div>
+          <div>
+            <label class="profil-label">Nom</label>
+            <input class="profil-input" id="create-nom" placeholder="Ex: Tremblay">
+          </div>
+        </div>
+        <label class="profil-label">Grade</label>
+        <input class="profil-input" id="create-grade" placeholder="Ex: Cpl, Sgt, MCpl…">
+        <label class="profil-label">Matricule (identifiant unique)</label>
+        <input class="profil-input" id="create-matricule" placeholder="Ex: 12345678" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        <label class="profil-label">Qualification principale</label>
+        <select class="profil-input" id="create-qual">
+          <option value="armee-ssc">Armée — SSC</option>
+          <option value="armee-tccc">Armée — TCCC</option>
+          <option value="medic-sdt">Médic de combat — Sdt</option>
+          <option value="medic-cpl">Médic de combat — Cpl</option>
+          <option value="medic-cplc">Médic de combat — Cplc</option>
+          <option value="medic-sgt">Médic de combat — Sgt et+</option>
+          <option value="paramedic-sdt">Paramédic — Sdt</option>
+          <option value="paramedic-cpl">Paramédic — Cpl</option>
+          <option value="paramedic-cplc">Paramédic — Cplc</option>
+          <option value="paramedic-sgt">Paramédic — Sgt et+</option>
+          <option value="clinicien">Clinicien (libre)</option>
+        </select>
+        <label class="profil-label">Code PIN (4 à 6 chiffres)</label>
+        <input class="profil-input pin" id="create-pin" type="password" placeholder="••••" maxlength="6" inputmode="numeric">
+        <label class="profil-label">Confirmer le PIN</label>
+        <input class="profil-input pin" id="create-pin2" type="password" placeholder="••••" maxlength="6" inputmode="numeric">
+        <button class="profil-btn primary" onclick="_profilCreer()">✅ Créer mon profil</button>
+        <button class="profil-btn secondary" onclick="_profilVue('login')">← Retour connexion</button>
+      </div>
+
+      <!-- VUE : PROFIL CONNECTÉ -->
+      <div class="profil-view" id="profil-vue-dashboard">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👤</div>
+          <div>
+            <div id="dash-profil-nom" style="font-size:17px;font-weight:700;color:var(--text);"></div>
+            <div id="dash-profil-info" style="font-size:11px;color:var(--text-muted);margin-top:2px;"></div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;">STATISTIQUES</div>
+        <div class="profil-stats-grid">
+          <div class="profil-stat-card">
+            <div class="profil-stat-val" id="stat-sessions">0</div>
+            <div class="profil-stat-lbl">Scénarios</div>
+          </div>
+          <div class="profil-stat-card">
+            <div class="profil-stat-val" id="stat-score">—</div>
+            <div class="profil-stat-lbl">Score moy.</div>
+          </div>
+          <div class="profil-stat-card">
+            <div class="profil-stat-val" id="stat-duree">—</div>
+            <div class="profil-stat-lbl">Durée moy.</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;">SCORES PAR ÉTAPE — M·A·R·C·H·E</div>
+        <div class="marche-stats" id="marche-stats-grid">
+          <div class="marche-stat"><div class="marche-stat-letter">M</div><div class="marche-stat-score na" id="ms-M">—</div></div>
+          <div class="marche-stat"><div class="marche-stat-letter">A</div><div class="marche-stat-score na" id="ms-A">—</div></div>
+          <div class="marche-stat"><div class="marche-stat-letter">R</div><div class="marche-stat-score na" id="ms-R">—</div></div>
+          <div class="marche-stat"><div class="marche-stat-letter">C</div><div class="marche-stat-score na" id="ms-C">—</div></div>
+          <div class="marche-stat"><div class="marche-stat-letter">H</div><div class="marche-stat-score na" id="ms-H">—</div></div>
+          <div class="marche-stat"><div class="marche-stat-letter">E</div><div class="marche-stat-score na" id="ms-E">—</div></div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;">HISTORIQUE DES SCÉNARIOS</div>
+        <div id="profil-historique-list" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">
+          <div style="color:var(--text-muted);font-size:12px;padding:12px 0;text-align:center;">Aucun scénario complété pour le moment.</div>
+        </div>
+        <button class="profil-btn danger" onclick="_profilDeconnecter()">🔓 Déconnexion</button>
+      </div>
+
     </div>
   </div>
 </div>
