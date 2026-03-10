@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MedAware — Coordonnateur</title>
+<title>ShockLine — Coordonnateur</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
@@ -112,7 +112,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
       <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#5e9e70" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
-  <div class="brand">MedAware<small>COORDONNATEUR</small></div>
+  <div class="brand">ShockLine<small>COORDONNATEUR</small></div>
   <span class="coord-badge">COORD</span>
   <span id="fb-badge">Initialisation…</span>
   <!-- Code session visible en permanence dans le header -->
@@ -137,7 +137,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
       <div class="code-block">
         <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-sec);margin-bottom:8px;">CODE DE SESSION</div>
         <div class="code-value" id="code-display">------</div>
-        <div class="code-hint">Les OCTs entrent ce code dans MedAware</div>
+        <div class="code-hint">Les OCTs entrent ce code dans ShockLine</div>
       </div>
       <button class="btn-primary" onclick="ouvrirDashboard()">Ouvrir le tableau de bord →</button>
       <button class="btn-secondary" onclick="copierCode()">📋 Copier le code</button>
@@ -166,7 +166,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
   <div id="octs-grid">
     <div id="no-octs">
       <strong>En attente des OCTs…</strong>
-      Les OCTs doivent entrer le code <span id="wait-code" style="color:var(--od-lit);font-family:var(--font-mono);letter-spacing:2px;">--</span> dans MedAware
+      Les OCTs doivent entrer le code <span id="wait-code" style="color:var(--od-lit);font-family:var(--font-mono);letter-spacing:2px;">--</span> dans ShockLine
     </div>
   </div>
   <div id="historique-panel">
@@ -220,7 +220,7 @@ function genCode(){
   return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
 function creerSession(){
-  const exo=document.getElementById('inp-exercice').value.trim()||'Exercice MedAware';
+  const exo=document.getElementById('inp-exercice').value.trim()||'Exercice ShockLine';
   const nom=document.getElementById('inp-coord-nom').value.trim()||'Coordonnateur';
   const code=genCode();
   exerciceNom=exo;coordNom=nom;currentCode=code;
