@@ -337,7 +337,7 @@ function renderOCTs(){
   octs.sort((a,b)=>(b.ts||0)-(a.ts||0));
   grid.innerHTML=octs.map(oct=>{
     const recent=(Date.now()-(oct.ts||0))<90000;
-    const key=esc(oct.octKey||oct.octNom||'');
+    const key=safeId(oct.octKey||oct.octNom||'');
     return `<div class="oct-card ${recent?'recent':'stale'}">
       <div class="oct-card-header">
         <span class="live-dot ${recent?'live':''}"></span>
@@ -402,13 +402,14 @@ function _demoData(){
 
 setInterval(()=>{
   Object.values(octsData).forEach(oct=>{
-    const key=esc(oct.octKey||oct.octNom||'');
+    const key=safeId(oct.octKey||oct.octNom||'');
     const el=document.getElementById('el-'+key);
     if(el&&oct.ts) el.textContent=_elapsed(oct.ts);
   });
 },5000);
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function safeId(s){return String(s||'').replace(/[^A-Za-z0-9_-]/g,'_');}
 function showToast(msg){
   const t=document.createElement('div');
   t.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#0d1f14;border:1px solid var(--od-green);border-radius:6px;padding:8px 18px;color:var(--od-lit);font-size:13px;z-index:600;white-space:nowrap;';

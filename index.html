@@ -11658,9 +11658,11 @@ function _profilSanitize(mat) {
 // ── Changer de vue dans le modal ──
 function _profilVue(vue) {
   document.querySelectorAll('.profil-view').forEach(v => v.classList.remove('active'));
-  document.getElementById('profil-vue-' + vue).classList.add('active');
+  const vueEl = document.getElementById('profil-vue-' + vue);
+  if (vueEl) vueEl.classList.add('active');
   const titles = { login: '👤 Connexion OCT', create: '👤 Créer un profil', dashboard: '👤 Mon profil' };
-  document.getElementById('profil-modal-title').textContent = titles[vue] || '👤 Profil';
+  const titleEl = document.getElementById('profil-modal-title');
+  if (titleEl) titleEl.textContent = titles[vue] || '👤 Profil';
   // Effacer les erreurs
   ['login-err','create-err'].forEach(id => { const e=document.getElementById(id); if(e) e.classList.remove('show'); });
 }
@@ -11698,6 +11700,7 @@ async function _profilConnecter() {
     localStorage.setItem(_PROFIL_LS_KEY, JSON.stringify(_profilCourant));
     _profilOnConnecte();
     _profilVue('dashboard');
+    _profilAfficherDashboard();
     showToast('✅ Connecté — ' + data.prenom + ' ' + data.nom, 'success');
   } catch(e) {
     err.textContent = 'Erreur réseau. Réessaie.'; err.classList.add('show');
@@ -11716,9 +11719,9 @@ async function _profilCreer() {
   const err     = document.getElementById('create-err');
 
   if (!prenom || !nom || !mat || !pin) { err.textContent = 'Tous les champs sont requis.'; err.classList.add('show'); return; }
+  if (!/^\d+$/.test(pin)) { err.textContent = 'Le PIN ne doit contenir que des chiffres.'; err.classList.add('show'); return; }
   if (pin.length < 4) { err.textContent = 'Le PIN doit faire au moins 4 chiffres.'; err.classList.add('show'); return; }
   if (pin !== pin2) { err.textContent = 'Les deux PINs ne correspondent pas.'; err.classList.add('show'); return; }
-  if (!/^\d+$/.test(pin)) { err.textContent = 'Le PIN ne doit contenir que des chiffres.'; err.classList.add('show'); return; }
 
   const ok = await _fbInit();
   if (!ok || !_fbDb) { err.textContent = 'Connexion Firebase indisponible.'; err.classList.add('show'); return; }
@@ -11736,6 +11739,7 @@ async function _profilCreer() {
     localStorage.setItem(_PROFIL_LS_KEY, JSON.stringify(_profilCourant));
     _profilOnConnecte();
     _profilVue('dashboard');
+    _profilAfficherDashboard();
     showToast('✅ Profil créé — Bienvenue ' + prenom + '!', 'success');
   } catch(e) {
     err.textContent = 'Erreur lors de la création. Réessaie.'; err.classList.add('show');
@@ -11748,7 +11752,8 @@ function _profilDeconnecter() {
   localStorage.removeItem(_PROFIL_LS_KEY);
   _profilOnDeconnecte();
   _profilVue('login');
-  document.getElementById('login-pin').value = '';
+  const pinEl = document.getElementById('login-pin');
+  if (pinEl) pinEl.value = '';
   showToast('Déconnecté du profil', 'success');
 }
 
