@@ -4536,9 +4536,8 @@ function _playRappelSound(type) {
         <button class="action-btn" onclick="logAction(this,'C','Accès IV/IO établi')">💉 Accès IV / IO</button>
         <button class="action-btn" onclick="toggleTxa(this)"><span class="badge-B">B</span> TXA — Acide tranexamique ▾</button>
         <div class="submenu" id="txa-menu">
-          <button class="sub-btn" id="txa1" onclick="logTxa(1)">Dose 1 — 1 g IV/IO (lent)</button>
-          <button class="sub-btn" id="txa2" onclick="logTxa(2)">Dose 2 — 1 g IV/IO (lent)</button>
-          <div style="font-size:10px; color:var(--text-muted); padding:2px 4px;">⚠ Max 2 g — fenêtre ≤ 3h post-trauma</div>
+          <button class="sub-btn" id="txa1" onclick="logTxa(1)">2 g IV/IO (lent) — dose unique</button>
+          <div style="font-size:10px; color:var(--text-muted); padding:2px 4px;">⚠ Dose unique 2 g — fenêtre ≤ 3h post-trauma</div>
         </div>
         <button class="action-btn" onclick="toggleBlood(this)"><span class="badge-B">B</span> Protocole sanguin ▾</button>
         <div class="blood-menu" id="blood-menu">
@@ -5037,12 +5036,8 @@ function _playRappelSound(type) {
           </div>
           <div class="med-card-body">
             <div class="med-info-block">
-              <div class="med-info-label">Dose 1</div>
-              <div class="med-info-val dose">1 g IV/IO en 10 min<br>(le plus tôt possible)</div>
-            </div>
-            <div class="med-info-block">
-              <div class="med-info-label">Dose 2 (si disponible)</div>
-              <div class="med-info-val dose">1 g IV en perfusion 8h<br>ou 1 g IV après 1h</div>
+              <div class="med-info-label">Dose unique</div>
+              <div class="med-info-val dose">2 g IV/IO en 10 min<br>(le plus tôt possible)</div>
             </div>
             <div class="med-info-block">
               <div class="med-info-label">Voie</div>
@@ -5050,13 +5045,13 @@ function _playRappelSound(type) {
             </div>
             <div class="med-info-block">
               <div class="med-info-label">🕐 Fenêtre</div>
-              <div class="med-info-val crit">≤ 3h post-trauma<br>Dose 1 idéale &lt; 1h</div>
+              <div class="med-info-val crit">≤ 3h post-trauma<br>Idéalement &lt; 1h</div>
             </div>
             <div class="med-info-block" style="grid-column:1/-1">
               <div class="med-info-label">⚠ Contre-indications</div>
               <div class="med-info-val warn">Allergie TXA. Ne pas donner si saignement actif ≥ 3h post-trauma. Éviter bolus IV rapide (hypotension).</div>
             </div>
-            <button class="med-log-btn" id="log-txa-med" onclick="logMedAdmin('TXA (acide tranexamique) 1g IV/IO — Dose 1','B','hemostase','log-txa-med')">✚ Logger Dose 1</button>
+            <button class="med-log-btn" id="log-txa-med" onclick="logMedAdmin('TXA (acide tranexamique) 2g IV/IO — dose unique','B','hemostase','log-txa-med')">✚ Logger TXA 2 g</button>
           </div>
         </div>
 
@@ -6207,7 +6202,7 @@ const S = {
   pfcRows: [],
   hitman: {},
   vitals: { fc:120, ta:'100/70', fr:22, spo2:96, temp:36.5, gcs:14, avpu:'A', bleed:false },
-  txaDone: [false,false],
+  txaDone: [false],
   currentScenario: null,
   exercises: ['MASCAL-RB-2026','EX-ASGARD-2026','FMST-OCT-2026'],
   // Transport
@@ -6349,7 +6344,7 @@ function lsRestoreSession(snap) {
   S.appelCount   = snap.appelCount || 0;
   S.intervenant  = snap.intervenant || { nom:'', prenom:'', grade:'', matricule:'' };
   S.vitals       = snap.vitals || S.vitals;
-  S.txaDone      = snap.txaDone || [false, false];
+  S.txaDone      = snap.txaDone || [false];
   S.releveChaine = snap.releveChaine || [];
 
   // Restituer le nom du scénario dans l'UI
@@ -6754,7 +6749,7 @@ function startScenario(idx) {
   S.vitals = { ...p.vitals };
   S.seconds = 0;
   S.running = false;
-  S.txaDone = [false,false];
+  S.txaDone = [false];
   S.actionLog = [];
   S.photoCount = 0;
   S.mistatCount = 0;
@@ -6796,7 +6791,7 @@ function resetOctUI(p) {
   // Reset buttons
   document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('done'));
   resetGarrotState();
-  document.querySelectorAll('#txa1,#txa2').forEach(b => b.classList.remove('done'));
+  document.getElementById('txa1').classList.remove('done');
   document.getElementById('txa-menu').classList.remove('open');
   document.getElementById('blood-menu').classList.remove('open');
 
@@ -6912,7 +6907,7 @@ function demarrerLibre() {
   S.currentScenario = libreProfile;
   S.vitals = { ...libreProfile.vitals };
   S.seconds = 0; S.running = false;
-  S.txaDone = [false,false];
+  S.txaDone = [false];
   S.actionLog = []; S.photoCount = 0; S.mistatCount = 0;
   S.scores = { M:null,A:null,R:null,C:null,H:null,E:null,MISTAT:null };
   S.sectionTimers = { M:null,A:null,R:null,C:null,H:null,E:null };
@@ -7212,11 +7207,11 @@ function toggleTxa(btn) {
 }
 function logTxa(dose) {
   if(!S.running) { showToast('⏱ Démarrez le chrono.','warn'); return; }
-  if(S.txaDone[dose-1]) return;
-  S.txaDone[dose-1] = true;
-  document.getElementById('txa'+dose).classList.add('done');
-  logAction(null,'C','TXA Dose '+dose+' — 1 g IV/IO (lent)');
-  if(dose===2) { S.vitals.fc = Math.max(85, S.vitals.fc-6); updateVitalsUI(); }
+  if(S.txaDone[0]) return;
+  S.txaDone[0] = true;
+  document.getElementById('txa1').classList.add('done');
+  logAction(null,'C','TXA — 2 g IV/IO (lent) — dose unique');
+  S.vitals.fc = Math.max(85, S.vitals.fc-6); updateVitalsUI();
 }
 
 // ── SANG ──
@@ -8213,8 +8208,7 @@ const AAR_THRESHOLDS = {
   'Pansement occlusif':  { green: 120,  amber: 240  },
   'BURP':                { green: 120,  amber: 240  },
   'NCD':                 { green: 240,  amber: 480  },
-  'TXA Dose 1':          { green: 300,  amber: 600  },
-  'TXA Dose 2':          { green: 600,  amber: 1200 },
+  'TXA':                 { green: 300,  amber: 600  },
   'Protocole sanguin':   { green: 300,  amber: 600  },
   'MIST-AT':             { green: 300,  amber: 600  },
   '9-liner':             { green: 300,  amber: 600  },
@@ -10196,7 +10190,7 @@ function startImportedScenario(id) {
   S.currentScenario = sc;
   S.vitals = { ...sc.vitals };
   S.seconds = 0; S.running = false;
-  S.txaDone = [false,false];
+  S.txaDone = [false];
   S.actionLog = []; S.photoCount = 0; S.mistatCount = 0;
   S.scores = { M:null,A:null,R:null,C:null,H:null,E:null,MISTAT:null };
   S.sectionTimers = { M:null,A:null,R:null,C:null,H:null,E:null };
