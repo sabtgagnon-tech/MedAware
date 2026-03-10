@@ -11545,10 +11545,66 @@ async function _fbConnecterSession(code) {
     if (snap.val() === true) {
       _fbSetStatus('connected', '✓ Connecté');
       _fbPushEtape('PRESENCE', `OCT connecte a la session ${code}`);
+      // Lire les métadonnées de la session pour informer l'OCT
+      _fbDb.ref(`sessions/${code}/meta`).once('value', metaSnap => {
+        const meta = metaSnap.val();
+        _fbAfficherBanniereConnexion(code, meta);
+      });
     } else {
       _fbSetStatus('offline', '● Hors ligne');
     }
   });
+}
+
+// ── Bannière de confirmation post-connexion ──
+function _fbAfficherBanniereConnexion(code, meta) {
+  // Retirer toute bannière précédente
+  const old = document.getElementById('session-linked-banner');
+  if (old) old.remove();
+
+  const exercice = (meta && meta.exercice) ? meta.exercice : null;
+  const coord    = (meta && meta.coord)    ? meta.coord    : null;
+
+  const banner = document.createElement('div');
+  banner.id = 'session-linked-banner';
+  banner.style.cssText = [
+    'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+    'background:#071a0d', 'border:2px solid #4a7c59', 'border-radius:10px',
+    'padding:16px 24px', 'z-index:9999', 'max-width:480px', 'width:calc(100% - 40px)',
+    'box-shadow:0 4px 24px rgba(0,0,0,0.6)', 'font-family:\'Barlow Condensed\',sans-serif',
+    'animation:_bannerIn .25s ease'
+  ].join(';');
+
+  const title = exercice
+    ? `<div style="font-size:15px;font-weight:700;color:#5e9e70;letter-spacing:1px;margin-bottom:4px;">✓ Session liée — ${exercice}</div>`
+    : `<div style="font-size:15px;font-weight:700;color:#5e9e70;letter-spacing:1px;margin-bottom:4px;">✓ Connecté à la session <span style="font-family:\'Share Tech Mono\',monospace;letter-spacing:3px;">${code}</span></div>`;
+
+  const coordLine = coord
+    ? `<div style="font-size:12px;color:#4a5a6a;margin-bottom:10px;">Coordonnateur : <span style="color:#c8d4e0;">${coord}</span></div>`
+    : '';
+
+  const guide = `<div style="font-size:13px;color:#c8d4e0;line-height:1.5;">
+    Vous êtes prêt. Choisissez un scénario dans la liste pour commencer —
+    votre progression sera transmise en temps réel au coordonnateur.
+  </div>`;
+
+  const closeBtn = `<button onclick="this.parentElement.remove()" style="
+    position:absolute;top:8px;right:10px;background:none;border:none;
+    color:#4a5a6a;font-size:18px;cursor:pointer;line-height:1;">✕</button>`;
+
+  banner.innerHTML = title + coordLine + guide + closeBtn;
+
+  // Ajouter style d'animation si pas déjà présent
+  if (!document.getElementById('_bannerStyle')) {
+    const s = document.createElement('style');
+    s.id = '_bannerStyle';
+    s.textContent = '@keyframes _bannerIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(banner);
+  // Auto-fermeture après 8 secondes
+  setTimeout(() => { if (banner.parentElement) banner.remove(); }, 8000);
 }
 
 // ── Push une étape vers le coordonnateur ──
